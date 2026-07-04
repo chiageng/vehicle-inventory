@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# next.js
+demo/.next/
+demo/out/
+demo/build/
+
+# env & secrets
+.env
+.env.*
+*.pem
+
+# debug & logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# misc
+.DS_Store
+.vercel
+*.tsbuildinfo
+
+# IDE
+.idea/
+.vscode/
+*.swp
