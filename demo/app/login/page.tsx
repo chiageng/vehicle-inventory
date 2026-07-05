@@ -4,7 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { mockLogin } from "@/lib/auth";
+import { mockApi } from "@/lib/mock-api";
+import { loginRedirect } from "@/lib/roles";
 import { useToast } from "@/components/Toast";
+
+function getSafeNextPath(): string | null {
+  if (typeof window === "undefined") return null;
+  const next = new URLSearchParams(window.location.search).get("next");
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,8 +24,13 @@ export default function LoginPage() {
     e.preventDefault();
     const user = mockLogin(email, password);
     if (user) {
+      mockApi.upsertUser(user);
       showToast(`Welcome back, ${user.name}!`);
-      router.push(user.role === "admin" ? "/admin" : "/dashboard");
+      router.push(
+        user.role === "admin"
+          ? loginRedirect(user.role)
+          : getSafeNextPath() ?? loginRedirect(user.role)
+      );
     } else {
       showToast("Please enter email and password", "error");
     }
@@ -27,8 +40,11 @@ export default function LoginPage() {
     <div className="mx-auto flex max-w-md flex-col justify-center px-4 py-16 sm:px-6">
       <h1 className="text-2xl font-bold text-slate-900">Log in</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Demo mode — any email and password work. Use{" "}
-        <span className="font-mono text-slate-800">admin@carinventory.my</span> for admin access.
+        Demo mode — any email and password work.
+        <br />
+        <span className="font-mono text-slate-800">admin@carinventory.my</span> → Platform Admin
+        <br />
+        <span className="font-mono text-slate-800">reseller@carinventory.my</span> → Reseller
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">

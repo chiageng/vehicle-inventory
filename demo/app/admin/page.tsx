@@ -1,43 +1,41 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useEffect, useState } from "react";
-import { getSession } from "@/lib/auth";
-import { formatCurrency, vehicleTitle } from "@/lib/format";
+import {
+  formatCondition,
+  formatCurrency,
+  formatMileage,
+  vehicleTitle,
+} from "@/lib/format";
 import { mockApi } from "@/lib/mock-api";
-import type { Inquiry, ListingDetail, ListingStatus } from "@/lib/types";
+import type { ListingDetail, ListingStatus } from "@/lib/types";
 import { useToast } from "@/components/Toast";
 
 type Tab = "all" | ListingStatus;
 
 export default function AdminPage() {
-  const router = useRouter();
   const { showToast } = useToast();
   const [listings, setListings] = useState<ListingDetail[]>([]);
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [tab, setTab] = useState<Tab>("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   function refresh() {
     setListings(mockApi.getAllListings());
-    setInquiries(mockApi.getAllInquiries());
   }
 
   useEffect(() => {
-    const session = getSession();
-    if (!session || session.role !== "admin") {
-      router.replace("/login");
-      return;
-    }
     refresh();
-  }, [router]);
+  }, []);
 
   const filtered =
     tab === "all" ? listings : listings.filter((d) => d.listing.status === tab);
 
-  const tabs: { key: Tab; label: string }[] = [
+  const pendingCount = listings.filter((d) => d.listing.status === "pending_review").length;
+
+  const tabs: { key: Tab; label: string; count?: number }[] = [
     { key: "all", label: "All" },
-    { key: "pending_review", label: "Pending" },
+    { key: "pending_review", label: "Pending", count: pendingCount },
     { key: "active", label: "Active" },
     { key: "removed", label: "Removed" },
   ];
@@ -45,73 +43,105 @@ export default function AdminPage() {
   function handleStatus(listingId: string, status: ListingStatus) {
     mockApi.updateListingStatus(listingId, status);
     showToast(status === "active" ? "Listing approved" : "Listing removed");
+    setExpandedId(null);
     refresh();
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <h1 className="text-3xl font-bold text-slate-900">Admin console</h1>
-      <p className="mt-1 text-slate-600">Moderate listings and review buyer inquiries</p>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Listing moderation</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Review, approve, reject, or remove marketplace listings
+          </p>
+        </div>
+        {pendingCount > 0 && (
+          <span className="rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800">
+            {pendingCount} pending approval
+          </span>
+        )}
+      </div>
 
-      <div className="mt-8 flex gap-2 border-b border-slate-200">
+      <div className="mt-6 flex gap-2 border-b border-slate-200">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === t.key
-                ? "border-teal-600 text-teal-600"
+                ? "border-slate-900 text-slate-900"
                 : "border-transparent text-slate-500 hover:text-slate-700"
             }`}
           >
             {t.label}
+            {t.count !== undefined && t.count > 0 && (
+              <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-xs text-white">
+                {t.count}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 bg-slate-50">
-            <tr>
-              <th className="px-4 py-3 font-medium text-slate-600">Vehicle</th>
-              <th className="hidden px-4 py-3 font-medium text-slate-600 sm:table-cell">Seller</th>
-              <th className="hidden px-4 py-3 font-medium text-slate-600 sm:table-cell">Price</th>
-              <th className="px-4 py-3 font-medium text-slate-600">Status</th>
-              <th className="px-4 py-3 font-medium text-slate-600">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filtered.map((d) => (
-              <tr key={d.listing.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">
-                  {vehicleTitle(d.vehicle)}
-                  <span className="ml-2 font-mono text-xs text-slate-500">{d.vehicle.plateNumber}</span>
-                </td>
-                <td className="hidden px-4 py-3 text-slate-600 sm:table-cell">{d.seller.name}</td>
-                <td className="hidden px-4 py-3 text-slate-700 sm:table-cell">
-                  {formatCurrency(d.listing.askingPrice)}
-                </td>
-                <td className="px-4 py-3 capitalize text-slate-600">
-                  {d.listing.status.replace("_", " ")}
-                </td>
-                <td className="px-4 py-3">
+      <div className="mt-4 space-y-3">
+        {filtered.length === 0 ? (
+          <p className="rounded-lg border border-slate-200 bg-white px-4 py-12 text-center text-slate-500">
+            No listings in this tab.
+          </p>
+        ) : (
+          filtered.map((d) => {
+            const isOpen = expandedId === d.listing.id;
+            const photo = d.photos.find((p) => p.isPrimary) ?? d.photos[0];
+
+            return (
+              <div
+                key={d.listing.id}
+                className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+              >
+                <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-slate-900">{vehicleTitle(d.vehicle)}</div>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                      <span className="font-mono">{d.vehicle.plateNumber}</span>
+                      <span>{formatCurrency(d.listing.askingPrice)}</span>
+                      <span className="capitalize">{d.listing.status.replace("_", " ")}</span>
+                      <span
+                        className={
+                          d.listing.listingType === "reseller"
+                            ? "text-purple-600"
+                            : undefined
+                        }
+                      >
+                        {d.listing.listingType}
+                      </span>
+                      <span>
+                        {d.seller.name}
+                        {d.owner ? ` → owner: ${d.owner.name}` : ""}
+                      </span>
+                    </div>
+                  </div>
                   <div className="flex flex-wrap gap-2">
-                    <Link href={`/listings/${d.listing.id}`} className="text-teal-600 hover:underline">
-                      View
-                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(isOpen ? null : d.listing.id)}
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      {isOpen ? "Hide" : "Details"}
+                    </button>
                     {d.listing.status === "pending_review" && (
                       <>
                         <button
                           type="button"
                           onClick={() => handleStatus(d.listing.id, "active")}
-                          className="text-emerald-600 hover:underline"
+                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
                         >
                           Approve
                         </button>
                         <button
                           type="button"
                           onClick={() => handleStatus(d.listing.id, "removed")}
-                          className="text-red-600 hover:underline"
+                          className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
                         >
                           Reject
                         </button>
@@ -121,54 +151,65 @@ export default function AdminPage() {
                       <button
                         type="button"
                         onClick={() => handleStatus(d.listing.id, "removed")}
-                        className="text-red-600 hover:underline"
+                        className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
                       >
                         Remove
                       </button>
                     )}
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </div>
 
-      <h2 className="mt-12 text-xl font-semibold text-slate-900">Inquiries</h2>
-      <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
-        {inquiries.length === 0 ? (
-          <p className="px-4 py-8 text-center text-slate-500">No inquiries yet</p>
-        ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>
-                <th className="px-4 py-3 font-medium text-slate-600">From</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Listing</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Message</th>
-                <th className="px-4 py-3 font-medium text-slate-600">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {inquiries.map((inq) => {
-                const listing = listings.find((d) => d.listing.id === inq.listingId);
-                return (
-                  <tr key={inq.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-slate-900">{inq.contactName}</div>
-                      <div className="text-xs text-slate-500">{inq.contactEmail}</div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {listing ? vehicleTitle(listing.vehicle) : inq.listingId}
-                    </td>
-                    <td className="max-w-xs truncate px-4 py-3 text-slate-600">{inq.message}</td>
-                    <td className="px-4 py-3 capitalize text-slate-600">{inq.status}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                {isOpen && (
+                  <div className="border-t border-slate-100 bg-slate-50 p-4">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {photo && (
+                        <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-200 sm:col-span-1">
+                          <Image
+                            src={photo.url}
+                            alt={vehicleTitle(d.vehicle)}
+                            fill
+                            className="object-cover"
+                            sizes="240px"
+                          />
+                        </div>
+                      )}
+                      <dl className="space-y-2 text-sm sm:col-span-1">
+                        <Detail label="Mileage" value={formatMileage(d.vehicle.mileage)} />
+                        <Detail label="Color" value={d.vehicle.color || "—"} />
+                        <Detail label="Transmission" value={d.vehicle.transmission} />
+                        <Detail label="Fuel" value={d.vehicle.fuelType} />
+                        <Detail label="Condition" value={formatCondition(d.vehicle.conditionGrade)} />
+                        <Detail label="Views" value={String(d.listing.viewCount)} />
+                        {d.valuation && (
+                          <Detail
+                            label="Estimate"
+                            value={`${formatCurrency(d.valuation.estimatedLow)} – ${formatCurrency(d.valuation.estimatedHigh)}`}
+                          />
+                        )}
+                      </dl>
+                      {d.vehicle.description && (
+                        <div className="text-sm sm:col-span-2 lg:col-span-1">
+                          <dt className="font-medium text-slate-600">Description</dt>
+                          <dd className="mt-1 text-slate-700">{d.vehicle.description}</dd>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
+    </div>
+  );
+}
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-slate-500">{label}</dt>
+      <dd className="font-medium capitalize text-slate-900">{value}</dd>
     </div>
   );
 }

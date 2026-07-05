@@ -4,13 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { clearSession, getSession } from "@/lib/auth";
+import { getUserNavLinks, roleLabel } from "@/lib/roles";
 import type { User } from "@/lib/types";
-
-const NAV_LINKS = [
-  { href: "/browse", label: "Browse" },
-  { href: "/sell", label: "Sell Your Car" },
-  { href: "/dashboard", label: "Dashboard" },
-];
 
 export function Header() {
   const pathname = usePathname();
@@ -21,6 +16,8 @@ export function Header() {
   useEffect(() => {
     setUser(getSession());
   }, [pathname]);
+
+  const navLinks = getUserNavLinks(user);
 
   function handleLogout() {
     clearSession();
@@ -39,10 +36,7 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
-          {(user?.role === "admin"
-            ? [{ href: "/admin", label: "Admin" }, { href: "/browse", label: "Browse" }]
-            : NAV_LINKS
-          ).map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -62,11 +56,9 @@ export function Header() {
             <>
               <span className="text-sm text-slate-600">
                 Hi, {user.name}
-                {user.role === "admin" && (
-                  <span className="ml-1.5 rounded bg-slate-800 px-1.5 py-0.5 text-xs text-white">
-                    Admin
-                  </span>
-                )}
+                <span className="ml-1.5 rounded bg-teal-100 px-1.5 py-0.5 text-xs font-medium text-teal-800">
+                  {roleLabel(user.role)}
+                </span>
               </span>
               <button
                 onClick={handleLogout}
@@ -111,10 +103,7 @@ export function Header() {
       {menuOpen && (
         <div className="border-t border-slate-200 px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-3">
-            {(user?.role === "admin"
-              ? [{ href: "/admin", label: "Admin" }, { href: "/browse", label: "Browse" }]
-              : NAV_LINKS
-            ).map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

@@ -1,4 +1,5 @@
-export type UserRole = "seller" | "buyer" | "admin";
+export type UserRole = "seller" | "buyer" | "admin" | "reseller";
+export type ListingType = "owner" | "reseller";
 export type VehicleStatus = "draft" | "pending_review" | "active" | "sold" | "removed";
 export type ListingStatus = "draft" | "pending_review" | "active" | "sold" | "removed";
 export type ConditionGrade = "excellent" | "good" | "fair" | "poor";
@@ -10,6 +11,7 @@ export type SortOption = "price_asc" | "price_desc" | "newest" | "mileage_asc";
 export interface User {
   id: string;
   email: string;
+  phone: string;
   name: string;
   role: UserRole;
   createdAt: string;
@@ -65,6 +67,8 @@ export interface Listing {
   id: string;
   vehicleId: string;
   sellerId: string;
+  ownerId: string | null;
+  listingType: ListingType;
   askingPrice: number;
   status: ListingStatus;
   viewCount: number;
@@ -82,6 +86,11 @@ export interface Inquiry {
   contactEmail: string;
   message: string;
   status: InquiryStatus;
+  emailNotified: boolean;
+  smsNotified: boolean;
+  replyMessage: string | null;
+  repliedAt: string | null;
+  buyerEmailNotified: boolean;
   createdAt: string;
 }
 
@@ -91,10 +100,12 @@ export interface ListingDetail {
   valuation: Valuation | null;
   photos: VehiclePhoto[];
   seller: Pick<User, "id" | "name">;
+  owner: Pick<User, "id" | "name"> | null;
 }
 
 export interface ListingFilters {
   make?: string;
+  model?: string;
   yearMin?: number;
   yearMax?: number;
   priceMin?: number;
@@ -116,6 +127,12 @@ export interface VehicleInput {
   conditionGrade: ConditionGrade;
   description: string;
   photos: { url: string; sortOrder: number; isPrimary: boolean }[];
+  clientOwnerName?: string;
+}
+
+export interface PublishResult {
+  listing: Listing;
+  valuation: Valuation;
 }
 
 export interface AppData {

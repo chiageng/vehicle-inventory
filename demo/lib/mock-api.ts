@@ -6,6 +6,8 @@ import type {
   Listing,
   ListingDetail,
   ListingFilters,
+  PublishResult,
+  User,
   Vehicle,
   VehicleInput,
   VehiclePhoto,
@@ -14,7 +16,7 @@ import type {
 import { computeValuation } from "./valuation";
 
 const STORAGE_KEY = "carinventory_data";
-const DATA_VERSION = "7-admin-console";
+const DATA_VERSION = "11-inquiry-replies";
 
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -61,14 +63,18 @@ function getListingDetail(data: AppData, listingId: string): ListingDetail | nul
   const photos = data.photos
     .filter((p) => p.vehicleId === vehicle.id)
     .sort((a, b) => a.sortOrder - b.sortOrder);
-  const seller = data.users.find((u) => u.id === listing.sellerId);
+  const contact = data.users.find((u) => u.id === listing.sellerId);
+  const ownerUser = listing.ownerId
+    ? data.users.find((u) => u.id === listing.ownerId)
+    : null;
 
   return {
     listing,
     vehicle,
     valuation,
     photos,
-    seller: { id: seller?.id ?? "", name: seller?.name ?? "Unknown" },
+    seller: { id: contact?.id ?? "", name: contact?.name ?? "Unknown" },
+    owner: ownerUser ? { id: ownerUser.id, name: ownerUser.name } : null,
   };
 }
 
@@ -114,6 +120,11 @@ export const mockApi = {
     if (filters.make) {
       results = results.filter(
         (d) => d.vehicle.make.toLowerCase() === filters.make!.toLowerCase()
+      );
+    }
+    if (filters.model) {
+      results = results.filter(
+        (d) => d.vehicle.model.toLowerCase().includes(filters.model!.toLowerCase())
       );
     }
     if (filters.yearMin) {
@@ -206,11 +217,40 @@ export const mockApi = {
     return listing;
   },
 
-  createVehicle(input: VehicleInput): { vehicle: Vehicle; valuation: Valuation } {
+  upsertUser(user: User): void {
+    const data = loadData();
+    const idx = data.users.findIndex((u) => u.id === user.id);
+    if (idx >= 0) {
+      data.users[idx] = user;
+    } else {
+      data.users.push(user);
+    }
+    saveData(data);
+  },
+
+  getInquiriesForSeller(sellerId: string): Inquiry[] {
+    const data = loadData();
+    const listingIds = new Set(
+      data.listings.filter((l) => l.sellerId === sellerId).map((l) => l.id)
+    );
+    return data.inquiries
+      .filter((i) => listingIds.has(i.listingId))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  createVehicle(input: VehicleInput): Vehicle {
     const data = loadData();
     const session = getSession();
-    const sellerId = session?.id ?? "user-demo-001";
+    if (!session || (session.role !== "seller" && session.role !== "reseller")) {
+      throw new Error("Must be logged in as seller or reseller");
+    }
+    const sellerId = session.id;
     const now = new Date().toISOString();
+
+    let description = input.description;
+    if (session.role === "reseller" && input.clientOwnerName?.trim()) {
+      description = `Client: ${input.clientOwnerName.trim()}${description ? `\n\n${description}` : ""}`;
+    }
 
     const vehicle: Vehicle = {
       id: generateId("veh"),
@@ -224,19 +264,50 @@ export const mockApi = {
       transmission: input.transmission,
       fuelType: input.fuelType,
       conditionGrade: input.conditionGrade,
-      description: input.description,
+      description,
       status: "draft",
       sellerId,
       createdAt: now,
       updatedAt: now,
     };
 
+    const photos: VehiclePhoto[] = input.photos.map((p, i) => ({
+      id: generateId("ph"),
+      vehicleId: vehicle.id,
+      url: p.url,
+      sortOrder: p.sortOrder ?? i,
+      isPrimary: p.isPrimary ?? i === 0,
+    }));
+
+    data.vehicles.push(vehicle);
+    data.photos.push(...photos);
+    saveData(data);
+
+    return vehicle;
+  },
+
+  publishListing(vehicleId: string, askingPrice: number): PublishResult | null {
+    const data = loadData();
+    const session = getSession();
+    if (!session || (session.role !== "seller" && session.role !== "reseller")) {
+      return null;
+    }
+
+    const vehicleIdx = data.vehicles.findIndex((v) => v.id === vehicleId);
+    if (vehicleIdx < 0) return null;
+
+    const vehicle = data.vehicles[vehicleIdx];
+    if (vehicle.sellerId !== session.id) return null;
+
+    const isReseller = session.role === "reseller";
+    const now = new Date().toISOString();
+
     const result = computeValuation({
-      make: input.make,
-      model: input.model,
-      year: input.year,
-      mileage: input.mileage,
-      conditionGrade: input.conditionGrade,
+      make: vehicle.make,
+      model: vehicle.model,
+      year: vehicle.year,
+      mileage: vehicle.mileage,
+      conditionGrade: vehicle.conditionGrade,
     });
 
     const valuation: Valuation = {
@@ -250,38 +321,23 @@ export const mockApi = {
       createdAt: now,
     };
 
-    const photos: VehiclePhoto[] = input.photos.map((p, i) => ({
-      id: generateId("ph"),
-      vehicleId: vehicle.id,
-      url: p.url,
-      sortOrder: p.sortOrder ?? i,
-      isPrimary: p.isPrimary ?? i === 0,
-    }));
+    const clientMatch = vehicle.description.match(/^Client: ([^\n]+)/);
+    const ownerId =
+      isReseller && clientMatch
+        ? data.users.find(
+            (u) => u.name.toLowerCase() === clientMatch[1].trim().toLowerCase()
+          )?.id ?? null
+        : null;
 
-    data.vehicles.push(vehicle);
-    data.valuations.push(valuation);
-    data.photos.push(...photos);
-    saveData(data);
-
-    return { vehicle, valuation };
-  },
-
-  publishListing(
-    vehicleId: string,
-    askingPrice: number
-  ): Listing | null {
-    const data = loadData();
-    const vehicleIdx = data.vehicles.findIndex((v) => v.id === vehicleId);
-    if (vehicleIdx < 0) return null;
-
-    const vehicle = data.vehicles[vehicleIdx];
-    const now = new Date().toISOString();
+    const finalPrice = askingPrice > 0 ? askingPrice : result.estimatedMid;
 
     const listing: Listing = {
       id: generateId("lst"),
       vehicleId,
-      sellerId: vehicle.sellerId,
-      askingPrice,
+      sellerId: session.id,
+      ownerId: isReseller ? ownerId : null,
+      listingType: isReseller ? "reseller" : "owner",
+      askingPrice: finalPrice,
       status: "pending_review",
       viewCount: 0,
       listedAt: now,
@@ -290,11 +346,51 @@ export const mockApi = {
       updatedAt: now,
     };
 
+    data.valuations.push(valuation);
     data.vehicles[vehicleIdx] = { ...vehicle, status: "pending_review", updatedAt: now };
     data.listings.push(listing);
     saveData(data);
 
-    return listing;
+    return { listing, valuation };
+  },
+
+  updateInquiryStatus(inquiryId: string, status: Inquiry["status"]): Inquiry | null {
+    const data = loadData();
+    const idx = data.inquiries.findIndex((i) => i.id === inquiryId);
+    if (idx < 0) return null;
+    data.inquiries[idx] = { ...data.inquiries[idx], status };
+    saveData(data);
+    return data.inquiries[idx];
+  },
+
+  replyToInquiry(inquiryId: string, replyMessage: string): Inquiry | null {
+    const data = loadData();
+    const session = getSession();
+    if (!session || (session.role !== "seller" && session.role !== "reseller")) {
+      return null;
+    }
+
+    const trimmed = replyMessage.trim();
+    if (!trimmed) return null;
+
+    const idx = data.inquiries.findIndex((i) => i.id === inquiryId);
+    if (idx < 0) return null;
+
+    const inquiry = data.inquiries[idx];
+    const listing = data.listings.find((l) => l.id === inquiry.listingId);
+    if (!listing || listing.sellerId !== session.id) return null;
+
+    const now = new Date().toISOString();
+    const updated: Inquiry = {
+      ...inquiry,
+      replyMessage: trimmed,
+      repliedAt: now,
+      status: "replied",
+      buyerEmailNotified: Boolean(inquiry.contactEmail),
+    };
+    data.inquiries[idx] = updated;
+    saveData(data);
+    return updated;
   },
 
   createInquiry(
@@ -307,6 +403,11 @@ export const mockApi = {
     const session = getSession();
     const now = new Date().toISOString();
 
+    const listing = data.listings.find((l) => l.id === listingId);
+    const seller = listing
+      ? data.users.find((u) => u.id === listing.sellerId)
+      : undefined;
+
     const inquiry: Inquiry = {
       id: generateId("inq"),
       listingId,
@@ -315,6 +416,11 @@ export const mockApi = {
       contactEmail,
       message,
       status: "new",
+      emailNotified: Boolean(seller?.email),
+      smsNotified: Boolean(seller?.phone),
+      replyMessage: null,
+      repliedAt: null,
+      buyerEmailNotified: false,
       createdAt: now,
     };
 

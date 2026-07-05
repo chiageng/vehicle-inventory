@@ -21,10 +21,11 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Demo accounts
 
-| Role   | Email                    | Password   |
-| ------ | ------------------------ | ---------- |
-| Admin  | `admin@carinventory.my`  | any value  |
-| Seller | any other email          | any value  |
+| Role     | Email                     | Password  |
+| -------- | ------------------------- | --------- |
+| Admin    | `admin@carinventory.my`   | any value |
+| Reseller | `reseller@carinventory.my`| any value |
+| Seller   | any other email           | any value |
 
 Buyers can browse and send inquiries without logging in.
 

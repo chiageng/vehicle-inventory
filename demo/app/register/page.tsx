@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { mockRegister } from "@/lib/auth";
+import { mockApi } from "@/lib/mock-api";
 import { useToast } from "@/components/Toast";
 
 export default function RegisterPage() {
@@ -11,16 +12,18 @@ export default function RegisterPage() {
   const { showToast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const user = mockRegister(email, password, name);
+    const user = mockRegister(email, password, name, phone);
     if (user) {
+      mockApi.upsertUser(user);
       showToast(`Account created! Welcome, ${user.name}.`);
       router.push("/dashboard");
     } else {
-      showToast("Please fill in all fields", "error");
+      showToast("Please fill in all fields including phone for SMS alerts", "error");
     }
   }
 
@@ -28,7 +31,8 @@ export default function RegisterPage() {
     <div className="mx-auto flex max-w-md flex-col justify-center px-4 py-16 sm:px-6">
       <h1 className="text-2xl font-bold text-slate-900">Create account</h1>
       <p className="mt-2 text-sm text-slate-600">
-        Join CarInventory to list and manage your vehicles.
+        Join CarInventory to list and manage your vehicles. Phone number is used for SMS
+        enquiry alerts.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -50,6 +54,16 @@ export default function RegisterPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             placeholder="you@example.com"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700">Phone (SMS alerts)</label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            placeholder="+60123456789"
           />
         </div>
         <div>

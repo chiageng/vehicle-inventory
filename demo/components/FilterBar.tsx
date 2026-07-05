@@ -26,6 +26,7 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
 
   const hasFilters =
     filters.make ||
+    filters.model ||
     filters.yearMin ||
     filters.yearMax ||
     filters.priceMin ||
@@ -49,6 +50,17 @@ export function FilterBar({ filters, onChange }: FilterBarProps) {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="min-w-[120px] flex-1">
+          <label className="block text-xs font-medium text-slate-500">Model</label>
+          <input
+            type="text"
+            placeholder="Accord"
+            value={filters.model ?? ""}
+            onChange={(e) => update({ model: e.target.value || undefined })}
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+          />
         </div>
 
         <div className="w-24">

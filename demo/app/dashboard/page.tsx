@@ -3,33 +3,47 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getSession } from "@/lib/auth";
 import { formatCurrency, vehicleTitle } from "@/lib/format";
 import { mockApi } from "@/lib/mock-api";
-import type { ListingDetail } from "@/lib/types";
+import type { Inquiry, ListingDetail } from "@/lib/types";
+import { useRequireSellerAuth } from "@/lib/useRequireSellerAuth";
+import { InquiryReplyPanel } from "@/components/InquiryReplyPanel";
 
-type Tab = "all" | "active" | "draft" | "sold";
+type Tab = "all" | "active" | "pending_review" | "draft" | "sold";
 
 export default function DashboardPage() {
+  const user = useRequireSellerAuth("/dashboard");
   const [listings, setListings] = useState<ListingDetail[]>([]);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [tab, setTab] = useState<Tab>("all");
-  const [sellerId, setSellerId] = useState<string | null>(null);
+
+  function handleInquiryReplied(updated: Inquiry) {
+    setInquiries((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+  }
 
   useEffect(() => {
-    const session = getSession();
-    const id = session?.id ?? "user-demo-001";
-    setSellerId(id);
-    setListings(mockApi.getSellerListings(id));
-  }, []);
+    if (!user) return;
+    setListings(mockApi.getSellerListings(user.id));
+    setInquiries(mockApi.getInquiriesForSeller(user.id));
+  }, [user]);
+
+  if (!user) {
+    return null;
+  }
+
+  const isReseller = user.role === "reseller";
 
   const filtered = listings.filter((d) => {
     if (tab === "all") return true;
     return d.listing.status === tab;
   });
 
+  const listingById = new Map(listings.map((d) => [d.listing.id, d]));
+
   const tabs: { key: Tab; label: string }[] = [
     { key: "all", label: "All" },
     { key: "active", label: "Active" },
+    { key: "pending_review", label: "Pending review" },
     { key: "draft", label: "Draft" },
     { key: "sold", label: "Sold" },
   ];
@@ -38,23 +52,29 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">My listings</h1>
-          <p className="mt-1 text-slate-600">Manage your vehicles and track performance</p>
+          <h1 className="text-3xl font-bold text-slate-900">
+            {isReseller ? "Client listings" : "My listings"}
+          </h1>
+          <p className="mt-1 text-slate-600">
+            {isReseller
+              ? "Manage all client sales and respond to buyer enquiries"
+              : "Manage your vehicles and respond to buyer enquiries"}
+          </p>
         </div>
         <Link
           href="/sell"
           className="inline-flex items-center justify-center rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
         >
-          + List a car
+          + {isReseller ? "List for client" : "List a car"}
         </Link>
       </div>
 
-      <div className="mt-8 flex gap-2 border-b border-slate-200">
+      <div className="mt-8 flex gap-2 overflow-x-auto border-b border-slate-200">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            className={`whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === t.key
                 ? "border-teal-600 text-teal-600"
                 : "border-transparent text-slate-500 hover:text-slate-700"
@@ -69,15 +89,13 @@ export default function DashboardPage() {
         <div className="mt-12 text-center">
           <p className="text-lg text-slate-600">No listings yet</p>
           <p className="mt-1 text-sm text-slate-500">
-            {sellerId
-              ? "Start by listing your first vehicle."
-              : "Log in to see your listings."}
+            Start by listing {isReseller ? "a client vehicle" : "your first vehicle"}.
           </p>
           <Link
             href="/sell"
             className="mt-4 inline-block rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700"
           >
-            Sell your car
+            {isReseller ? "List for client" : "Sell your car"}
           </Link>
         </div>
       ) : (
@@ -136,12 +154,16 @@ export default function DashboardPage() {
                       {d.listing.viewCount}
                     </td>
                     <td className="px-4 py-3">
-                      <Link
-                        href={`/listings/${d.listing.id}`}
-                        className="text-teal-600 hover:underline"
-                      >
-                        View
-                      </Link>
+                      {d.listing.status === "active" ? (
+                        <Link
+                          href={`/listings/${d.listing.id}`}
+                          className="text-teal-600 hover:underline"
+                        >
+                          View
+                        </Link>
+                      ) : (
+                        <span className="text-slate-400">Pending approval</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -150,6 +172,36 @@ export default function DashboardPage() {
           </table>
         </div>
       )}
+
+      <section className="mt-12">
+        <h2 className="text-xl font-bold text-slate-900">Buyer enquiries</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Reply to buyer messages here. They are notified by email when you respond.
+        </p>
+
+        {inquiries.length === 0 ? (
+          <p className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+            No enquiries yet. They will appear here when buyers contact you.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {inquiries.map((inq) => {
+              const listingDetail = listingById.get(inq.listingId);
+              const listingTitle = listingDetail
+                ? vehicleTitle(listingDetail.vehicle)
+                : "Unknown listing";
+              return (
+                <InquiryReplyPanel
+                  key={inq.id}
+                  inquiry={inq}
+                  listingTitle={listingTitle}
+                  onReplied={handleInquiryReplied}
+                />
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

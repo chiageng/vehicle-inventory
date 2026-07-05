@@ -37,6 +37,11 @@ export function ListingCard({ listing }: ListingCardProps) {
             Est. {formatCurrency(valuation.estimatedMid)}
           </span>
         )}
+        {listing.listing.listingType === "reseller" && (
+          <span className="absolute top-2 right-2 rounded-md bg-purple-600/90 px-2 py-1 text-xs font-medium text-white">
+            Reseller
+          </span>
+        )}
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-slate-900 group-hover:text-teal-600">

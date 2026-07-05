@@ -1,4 +1,5 @@
 import type { User } from "./types";
+import { resolveDemoRole } from "./roles";
 
 const SESSION_KEY = "carinventory_session";
 
@@ -21,14 +22,13 @@ export function clearSession(): void {
   localStorage.removeItem(SESSION_KEY);
 }
 
-export function mockLogin(email: string, password: string): User | null {
+export function mockLogin(email: string, password: string, phone?: string): User | null {
   if (!email || !password) return null;
-  const isAdmin = email.toLowerCase() === "admin@carinventory.my";
+  const demo = resolveDemoRole(email);
   const user: User = {
-    id: isAdmin ? "user-admin" : "user-demo-001",
+    ...demo,
     email,
-    name: isAdmin ? "Admin" : email.split("@")[0],
-    role: isAdmin ? "admin" : "seller",
+    phone: phone ?? "+60123456789",
     createdAt: new Date().toISOString(),
   };
   setSession(user);
@@ -38,12 +38,14 @@ export function mockLogin(email: string, password: string): User | null {
 export function mockRegister(
   email: string,
   password: string,
-  name: string
+  name: string,
+  phone: string
 ): User | null {
-  if (!email || !password || !name) return null;
+  if (!email || !password || !name || !phone) return null;
   const user: User = {
     id: `user-${Date.now()}`,
     email,
+    phone,
     name,
     role: "seller",
     createdAt: new Date().toISOString(),

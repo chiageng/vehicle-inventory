@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
+import { Shell } from "@/components/Shell";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
@@ -33,9 +32,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ToastProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <Shell>{children}</Shell>
         </ToastProvider>
       </body>
     </html>

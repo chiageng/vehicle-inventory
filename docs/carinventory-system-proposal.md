@@ -271,38 +271,27 @@ What we do. Reconcile record and listing counts against source; spot-check sampl
 
 ### User stories
 
-**Seller**
+Each row is a **goal**, not a UI task. Entering fields, clicking publish, or opening a filter are tasks that support a story — they belong in acceptance criteria, not here.
 
-• Register / log in and open the sell wizard.
+Read as: *As a [Role], I want [Goal], so that [So that…].*
 
-• Enter plate, make, model, year, trim, mileage, condition, description, and photos.
 
-• Request a valuation (EZAUTO in production; rule engine in prototype) and review the MYR low / mid / high range.
+| Role           | Goal | So that… |
+| -------------- | ---- | -------- |
+| Seller         | register and log in securely | only I can access and manage my account and listings |
+|                | create and publish a listing for my vehicle with its details and photos | interested buyers can discover it |
+|                | an automated valuation estimate the moment I publish my vehicle | I can price it accurately and with confidence |
+|                | be notified by email and SMS when a buyer enquires about my vehicle | I can respond promptly and not miss a sale |
+| Reseller       | sell a client’s vehicle on the marketplace | the owner reaches buyers without listing the car themselves |
+|                | manage all my client sales in one place                    | I stay on top of every consignment without losing track                 |
+|                | act as the enquiry contact for client listings             | the owner gets professional representation without handling buyer calls |
+| Buyer          | find vehicles that match what I am looking for             | I can shortlist options without creating an account                     |
+|                | compare listings on price, mileage, and spec               | I focus on the best-value cars before I enquire                         |
+|                | judge a listing before I contact anyone                    | I only reach out for vehicles worth pursuing                            |
+|                | start a conversation with the seller or reseller           | I can ask questions or arrange a viewing                                |
+| Platform admin | run marketplace moderation separately from the public site | listing decisions are not mixed with the buyer/seller experience        |
+|                | keep the listing approval queue moving                     | sellers go live quickly and buyers see fresh inventory                  |
+|                | prevent low-quality listings from going public             | buyers trust what appears on the marketplace                            |
+|                | remove listings that breach policy                         | the platform stays safe and credible                                    |
 
-• Set asking price and publish the listing to the marketplace.
 
-• View all my listings on the dashboard (status, price, views).
-
-• Receive and read buyer inquiries on my listings.
-
-**Buyer**
-
-• Browse active listings without logging in.
-
-• Filter and sort by make, model, year, price, and mileage.
-
-• Open a listing to see photos, specs, valuation estimate, and asking price.
-
-• Send an inquiry to the seller (name, email, message).
-
-**Admin**
-
-• Log in to the admin console (`admin@carinventory.my` in prototype).
-
-• View all listings across sellers; filter by status (pending review, active, removed).
-
-• Approve pending listings → active, or reject → removed.
-
-• Remove an active listing (policy violation or seller request).
-
-• View all buyer inquiries across the platform.

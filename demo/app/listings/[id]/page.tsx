@@ -12,9 +12,11 @@ import {
   vehicleTitle,
 } from "@/lib/format";
 import { mockApi } from "@/lib/mock-api";
+import { useRedirectAdminAway } from "@/lib/useRedirectAdminAway";
 import type { ListingDetail } from "@/lib/types";
 
 export default function ListingDetailPage() {
+  useRedirectAdminAway();
   const params = useParams();
   const listingId = params.id as string;
   const [detail, setDetail] = useState<ListingDetail | null>(null);
@@ -36,9 +38,10 @@ export default function ListingDetailPage() {
     );
   }
 
-  const { vehicle, valuation, photos, seller, listing } = detail;
+  const { vehicle, valuation, photos, seller, owner, listing } = detail;
   const title = vehicleTitle(vehicle);
   const currentPhoto = photos[activePhoto] ?? photos[0];
+  const isResellerListing = listing.listingType === "reseller";
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
@@ -88,7 +91,15 @@ export default function ListingDetailPage() {
               {vehicle.plateNumber}
             </p>
             <p className="mt-2 text-slate-500">
-              Listed by {seller.name} · {listing.viewCount} views
+              {isResellerListing && owner ? (
+                <>
+                  Listed by {seller.name} (reseller) on behalf of {owner.name}
+                </>
+              ) : (
+                <>Listed by {seller.name}</>
+              )}
+              {" · "}
+              {listing.viewCount} views
             </p>
 
             {vehicle.description && (
@@ -132,12 +143,19 @@ export default function ListingDetailPage() {
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Contact seller</h2>
+            <h2 className="text-lg font-semibold text-slate-900">
+              {isResellerListing ? "Contact reseller" : "Contact seller"}
+            </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Send a message to {seller.name}
+              {isResellerListing && owner
+                ? `Message ${seller.name} — they are helping ${owner.name} sell this vehicle.`
+                : `Send a message to ${seller.name}`}
             </p>
             <div className="mt-4">
-              <InquiryForm listingId={listing.id} />
+              <InquiryForm
+                listingId={listing.id}
+                contactLabel={isResellerListing ? "reseller" : "seller"}
+              />
             </div>
           </div>
         </div>
