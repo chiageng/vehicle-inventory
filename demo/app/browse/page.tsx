@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { FilterBar } from "@/components/FilterBar";
 import { ListingGrid } from "@/components/ListingGrid";
-import { mockApi } from "@/lib/mock-api";
+import { api } from "@/lib/api";
 import type { ListingDetail, ListingFilters } from "@/lib/types";
 
 export default function BrowsePage() {
@@ -11,7 +11,7 @@ export default function BrowsePage() {
   const [listings, setListings] = useState<ListingDetail[]>([]);
 
   useEffect(() => {
-    setListings(mockApi.searchListings(filters));
+    api.searchListings(filters).then(setListings);
   }, [filters]);
 
   return (

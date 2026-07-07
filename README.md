@@ -1,15 +1,15 @@
 # CarInventory
 
-Malaysia-market car valuation and inventory marketplace. Private sellers list vehicles, receive MYR valuations, and publish to a buyer-facing marketplace. Production valuations come from the EZAUTO Central Vehicle Datahouse.
+Malaysia-market car valuation and inventory marketplace. Private sellers list vehicles, receive MYR valuations at publish time, and reach buyers through a moderated marketplace. Production valuations integrate with the EZAUTO Central Vehicle Datahouse.
 
 ## Repository structure
 
 ```
-├── demo/          Interactive Next.js prototype (sell, browse, admin)
-└── docs/          System proposal (schema, data strategy, rollout plan)
+├── demo/     Interactive Next.js preview (sell, browse, enquiries, admin)
+└── docs/     System proposal — schema, data strategy, rollout plan
 ```
 
-## Quick start (prototype)
+## Quick start
 
 ```bash
 cd demo
@@ -19,46 +19,53 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Demo accounts
+### Preview accounts
 
-| Role     | Email                     | Password  |
-| -------- | ------------------------- | --------- |
-| Admin    | `admin@carinventory.my`   | any value |
-| Reseller | `reseller@carinventory.my`| any value |
-| Seller   | any other email           | any value |
+| Role     | Email                      | Password     |
+| -------- | -------------------------- | ------------ |
+| Admin    | `admin@carinventory.my`    | `admin123`   |
+| Reseller | `reseller@carinventory.my` | `reseller123`|
+| Seller   | `sarah@example.com`        | `demo123`    |
 
-Buyers can browse and send inquiries without logging in.
+New accounts can be registered from the sign-up page. Buyers can browse and enquire without an account; registered buyers see seller replies under **My Enquiries**.
 
-## Features (prototype)
+### Reset sample data
 
-- **Sell** — Multi-step wizard: vehicle details → photos → valuation → publish (pending admin review)
-- **Browse** — Filter listings by make, year, price, mileage
-- **Listing detail** — Photos, specs, valuation estimate, contact seller
-- **Dashboard** — Sellers manage their listings
-- **Admin** — Approve/reject listings, view inquiries
+```bash
+cd demo
+npm run reset-data
+```
 
-## Tech stack
+Restart the dev server after resetting.
+
+## Preview features
+
+| Area | Capability |
+|------|------------|
+| **Sell** | Guided listing wizard — vehicle details, photos, valuation at publish, admin review queue |
+| **Browse** | Search and filter by make, model, year, price, mileage |
+| **Enquiries** | Two-way buyer–seller messaging with conversation history |
+| **Dashboard** | Sellers manage listings, update prices, reply to buyers |
+| **Admin** | Approve or remove listings (separate moderation console) |
+
+## Tech stack (preview)
 
 - Next.js 16 (App Router), TypeScript, Tailwind CSS
-- Mock API with localStorage (`demo/lib/mock-api.ts`)
-- Rule-based valuation engine for prototype (`demo/lib/valuation.ts`)
-- Production path: EZAUTO datahouse integration (see docs)
+- REST API routes with JSON file persistence (`demo/data/`)
+- Cookie-based authentication
+- Rule-based valuation engine (`demo/lib/valuation.ts`) — production path uses EZAUTO per proposal
 
 ## Documentation
 
-Main proposal: [`docs/carinventory-system-proposal.md`](docs/carinventory-system-proposal.md)
+Full system proposal: [`docs/carinventory-system-proposal.md`](docs/carinventory-system-proposal.md)
 
-Covers:
-
-1. Database schema (PostgreSQL, encryption, EZAUTO payloads)
-2. Multi-source data strategy (seller input vs EZAUTO valuation)
-3. Rollout plan (assess → host → protect → migrate → gate → cutover)
+Covers database schema, multi-source data strategy (seller input vs EZAUTO valuation), user stories, and a six-phase rollout plan.
 
 ## Market defaults
 
 - Currency: **MYR**
 - Mileage: **km**
-- Identity: **number plate** (seller-facing)
+- Vehicle identity: **number plate** (seller-facing)
 
 ## License
 

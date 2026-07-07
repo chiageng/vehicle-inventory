@@ -2,30 +2,41 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { formatCurrency, vehicleTitle } from "@/lib/format";
-import { mockApi } from "@/lib/mock-api";
-import type { Inquiry, ListingDetail } from "@/lib/types";
+import { useCallback, useEffect, useState } from "react";
+import { ConversationPanel } from "@/components/ConversationPanel";
+import { ListingPriceEditor } from "@/components/ListingPriceEditor";
+import { api } from "@/lib/api";
+import { vehicleTitle } from "@/lib/format";
+import type { Conversation, ListingDetail } from "@/lib/types";
 import { useRequireSellerAuth } from "@/lib/useRequireSellerAuth";
-import { InquiryReplyPanel } from "@/components/InquiryReplyPanel";
 
 type Tab = "all" | "active" | "pending_review" | "draft" | "sold";
 
 export default function DashboardPage() {
   const user = useRequireSellerAuth("/dashboard");
   const [listings, setListings] = useState<ListingDetail[]>([]);
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [tab, setTab] = useState<Tab>("all");
+  const [loading, setLoading] = useState(true);
 
-  function handleInquiryReplied(updated: Inquiry) {
-    setInquiries((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
-  }
+  const loadData = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const [sellerListings, sellerConversations] = await Promise.all([
+        api.getSellerListings(),
+        api.getSellerConversations(),
+      ]);
+      setListings(sellerListings);
+      setConversations(sellerConversations);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
-    if (!user) return;
-    setListings(mockApi.getSellerListings(user.id));
-    setInquiries(mockApi.getInquiriesForSeller(user.id));
-  }, [user]);
+    loadData();
+  }, [loadData]);
 
   if (!user) {
     return null;
@@ -85,7 +96,9 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <p className="mt-12 text-center text-slate-500">Loading…</p>
+      ) : filtered.length === 0 ? (
         <div className="mt-12 text-center">
           <p className="text-lg text-slate-600">No listings yet</p>
           <p className="mt-1 text-sm text-slate-500">
@@ -145,7 +158,23 @@ export default function DashboardPage() {
                       {d.vehicle.plateNumber}
                     </td>
                     <td className="hidden px-4 py-3 text-slate-700 sm:table-cell">
-                      {formatCurrency(d.listing.askingPrice)}
+                      <ListingPriceEditor
+                        listingId={d.listing.id}
+                        askingPrice={d.listing.askingPrice}
+                        status={d.listing.status}
+                        onUpdated={(askingPrice) =>
+                          setListings((prev) =>
+                            prev.map((item) =>
+                              item.listing.id === d.listing.id
+                                ? {
+                                    ...item,
+                                    listing: { ...item.listing, askingPrice },
+                                  }
+                                : item
+                            )
+                          )
+                        }
+                      />
                     </td>
                     <td className="hidden px-4 py-3 md:table-cell">
                       <StatusBadge status={d.listing.status} />
@@ -174,28 +203,35 @@ export default function DashboardPage() {
       )}
 
       <section className="mt-12">
-        <h2 className="text-xl font-bold text-slate-900">Buyer enquiries</h2>
+        <h2 className="text-xl font-bold text-slate-900">Buyer conversations</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Reply to buyer messages here. They are notified by email when you respond.
+          Reply to enquiries about your listings. Buyers see your responses under My Enquiries.
         </p>
 
-        {inquiries.length === 0 ? (
+        {loading ? (
+          <p className="mt-6 text-center text-sm text-slate-500">Loading conversations…</p>
+        ) : conversations.length === 0 ? (
           <p className="mt-6 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-            No enquiries yet. They will appear here when buyers contact you.
+            No conversations yet. They will appear here when buyers contact you.
           </p>
         ) : (
           <div className="mt-4 space-y-3">
-            {inquiries.map((inq) => {
-              const listingDetail = listingById.get(inq.listingId);
+            {conversations.map((conv) => {
+              const listingDetail = listingById.get(conv.listingId);
               const listingTitle = listingDetail
                 ? vehicleTitle(listingDetail.vehicle)
                 : "Unknown listing";
               return (
-                <InquiryReplyPanel
-                  key={inq.id}
-                  inquiry={inq}
+                <ConversationPanel
+                  key={conv.id}
+                  conversation={conv}
                   listingTitle={listingTitle}
-                  onReplied={handleInquiryReplied}
+                  mode="seller"
+                  onUpdated={(updated) =>
+                    setConversations((prev) =>
+                      prev.map((c) => (c.id === updated.id ? updated : c))
+                    )
+                  }
                 />
               );
             })}

@@ -11,7 +11,7 @@ import {
   formatMileage,
   vehicleTitle,
 } from "@/lib/format";
-import { mockApi } from "@/lib/mock-api";
+import { api } from "@/lib/api";
 import { useRedirectAdminAway } from "@/lib/useRedirectAdminAway";
 import type { ListingDetail } from "@/lib/types";
 
@@ -23,8 +23,7 @@ export default function ListingDetailPage() {
   const [activePhoto, setActivePhoto] = useState(0);
 
   useEffect(() => {
-    const data = mockApi.getListing(listingId);
-    setDetail(data);
+    api.getListing(listingId).then(setDetail);
   }, [listingId]);
 
   if (!detail) {

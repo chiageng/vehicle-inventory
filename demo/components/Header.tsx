@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { clearSession, getSession } from "@/lib/auth";
+import { fetchSession, logout } from "@/lib/auth";
 import { getUserNavLinks, roleLabel } from "@/lib/roles";
 import type { User } from "@/lib/types";
 
@@ -14,13 +14,13 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    setUser(getSession());
+    fetchSession().then(setUser);
   }, [pathname]);
 
   const navLinks = getUserNavLinks(user);
 
-  function handleLogout() {
-    clearSession();
+  async function handleLogout() {
+    await logout();
     setUser(null);
     router.push("/");
   }

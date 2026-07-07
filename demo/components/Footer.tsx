@@ -41,8 +41,8 @@ export function Footer() {
             details independently before purchase.
           </p>
           <p>
-            Demo prototype — no real transactions. Rule-based estimates in prototype;
-            production uses EZAUTO datahouse.
+            Interactive preview — valuations are illustrative. Production platform uses
+            EZAUTO Central Vehicle Datahouse for market pricing.
           </p>
           <p>© {new Date().getFullYear()} CarInventory · VibeCoders Penang</p>
         </div>

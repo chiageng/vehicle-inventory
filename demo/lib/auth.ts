@@ -1,55 +1,44 @@
+import { api } from "./api";
 import type { User } from "./types";
-import { resolveDemoRole } from "./roles";
 
-const SESSION_KEY = "carinventory_session";
+let cachedUser: User | null | undefined;
 
-export function getSession(): User | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(SESSION_KEY);
-  if (!raw) return null;
+export async function fetchSession(): Promise<User | null> {
   try {
-    return JSON.parse(raw) as User;
+    cachedUser = await api.fetchSession();
+    return cachedUser;
   } catch {
+    cachedUser = null;
     return null;
   }
 }
 
-export function setSession(user: User): void {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+export function getCachedSession(): User | null {
+  return cachedUser ?? null;
 }
 
-export function clearSession(): void {
-  localStorage.removeItem(SESSION_KEY);
+export function setCachedSession(user: User | null): void {
+  cachedUser = user;
 }
 
-export function mockLogin(email: string, password: string, phone?: string): User | null {
-  if (!email || !password) return null;
-  const demo = resolveDemoRole(email);
-  const user: User = {
-    ...demo,
-    email,
-    phone: phone ?? "+60123456789",
-    createdAt: new Date().toISOString(),
-  };
-  setSession(user);
+export async function login(email: string, password: string): Promise<User> {
+  const user = await api.login(email, password);
+  cachedUser = user;
   return user;
 }
 
-export function mockRegister(
+export async function register(
   email: string,
   password: string,
   name: string,
   phone: string
-): User | null {
-  if (!email || !password || !name || !phone) return null;
-  const user: User = {
-    id: `user-${Date.now()}`,
-    email,
-    phone,
-    name,
-    role: "seller",
-    createdAt: new Date().toISOString(),
-  };
-  setSession(user);
+): Promise<User> {
+  const user = await api.register(email, password, name, phone);
+  cachedUser = user;
   return user;
+}
+
+export async function logout(): Promise<void> {
+  await api.logout();
+  cachedUser = null;
 }

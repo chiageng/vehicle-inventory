@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getSession } from "@/lib/auth";
+import { fetchSession } from "@/lib/auth";
 import { formatCurrency } from "@/lib/format";
-import { mockApi } from "@/lib/mock-api";
+import { api } from "@/lib/api";
 import type {
   ConditionGrade,
   FuelType,
@@ -53,8 +53,9 @@ export function VehicleWizard() {
   const [askingPrice, setAskingPrice] = useState(0);
 
   useEffect(() => {
-    const session = getSession();
-    setIsReseller(session?.role === "reseller");
+    fetchSession().then((session) => {
+      setIsReseller(session?.role === "reseller");
+    });
   }, []);
 
   function validateStep0(): boolean {
@@ -85,7 +86,7 @@ export function VehicleWizard() {
     return true;
   }
 
-  function handleNext() {
+  async function handleNext() {
     if (step === 0 && !validateStep0()) return;
     if (step === 1 && !validateStep1()) return;
 
@@ -106,7 +107,7 @@ export function VehicleWizard() {
         clientOwnerName: isReseller ? clientOwnerName : undefined,
       };
       try {
-        const created = mockApi.createVehicle(input);
+        const created = await api.createVehicle(input);
         setVehicle(created);
       } catch {
         showToast("Please log in as a seller or reseller to continue", "error");
@@ -118,33 +119,31 @@ export function VehicleWizard() {
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
 
-  function handlePublish() {
+  async function handlePublish() {
     if (!vehicle || publishing) return;
 
     setPublishing(true);
-    const result = mockApi.publishListing(
-      vehicle.id,
-      askingPrice > 0 ? askingPrice : 0
-    );
+    try {
+      const result = await api.publishListing(
+        vehicle.id,
+        askingPrice > 0 ? askingPrice : 0
+      );
 
-    if (!result) {
+      const { valuation: publishedValuation } = result;
+      const finalPrice =
+        askingPrice > 0 ? askingPrice : publishedValuation.estimatedMid;
+
+      setValuation(publishedValuation);
+      setAskingPrice(finalPrice);
+
+      showToast(
+        `Published! Estimate: ${formatCurrency(publishedValuation.estimatedMid)} — pending admin approval.`
+      );
+      router.push("/dashboard");
+    } catch {
       showToast("Could not publish — please log in and try again", "error");
-      setPublishing(false);
-      return;
     }
-
-    const { valuation: publishedValuation } = result;
-    const finalPrice =
-      askingPrice > 0 ? askingPrice : publishedValuation.estimatedMid;
-
-    setValuation(publishedValuation);
-    setAskingPrice(finalPrice);
-
-    showToast(
-      `Published! Estimate: ${formatCurrency(publishedValuation.estimatedMid)} — pending admin approval.`
-    );
     setPublishing(false);
-    router.push("/dashboard");
   }
 
   return (

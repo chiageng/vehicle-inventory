@@ -33,28 +33,15 @@ export function getUserNavLinks(user: User | null): NavLink[] {
   if (user.role === "reseller") {
     return [
       { href: "/browse", label: "Browse" },
+      { href: "/enquiries", label: "My Enquiries" },
       { href: "/sell", label: "List for Client" },
       { href: "/dashboard", label: "Client Listings" },
     ];
   }
   return [
     { href: "/browse", label: "Browse" },
+    { href: "/enquiries", label: "My Enquiries" },
     { href: "/sell", label: "Sell Your Car" },
     { href: "/dashboard", label: "My Listings" },
   ];
-}
-
-export function resolveDemoRole(email: string): Pick<User, "id" | "name" | "role"> {
-  const normalized = email.toLowerCase();
-  if (normalized === "admin@carinventory.my") {
-    return { id: "user-admin", name: "Platform Admin", role: "admin" };
-  }
-  if (normalized === "reseller@carinventory.my") {
-    return { id: "user-reseller", name: "Ahmad Reseller", role: "reseller" };
-  }
-  return {
-    id: "user-001",
-    name: email.split("@")[0],
-    role: "seller",
-  };
 }

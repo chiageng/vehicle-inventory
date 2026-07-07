@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { clearSession, getSession } from "@/lib/auth";
+import { fetchSession, logout } from "@/lib/auth";
 import type { User } from "@/lib/types";
 
 export function AdminHeader() {
@@ -12,16 +12,17 @@ export function AdminHeader() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const session = getSession();
-    if (!session || session.role !== "admin") {
-      router.replace("/login");
-      return;
-    }
-    setUser(session);
+    fetchSession().then((session) => {
+      if (!session || session.role !== "admin") {
+        router.replace("/login");
+        return;
+      }
+      setUser(session);
+    });
   }, [pathname, router]);
 
-  function handleLogout() {
-    clearSession();
+  async function handleLogout() {
+    await logout();
     router.push("/login");
   }
 

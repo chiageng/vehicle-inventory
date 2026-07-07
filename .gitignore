@@ -29,7 +29,6 @@ yarn-error.log*
 .vercel
 *.tsbuildinfo
 
-# IDE
-.idea/
-.vscode/
-*.swp
+# runtime JSON database (created on first server start)
+demo/data/*.json
+demo/data/*.tmp

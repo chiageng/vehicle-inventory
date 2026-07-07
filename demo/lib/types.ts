@@ -94,6 +94,41 @@ export interface Inquiry {
   createdAt: string;
 }
 
+export interface ConversationMessage {
+  id: string;
+  from: "buyer" | "seller";
+  senderId: string | null;
+  senderName: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface Conversation {
+  id: string;
+  listingId: string;
+  sellerId: string;
+  buyerId: string | null;
+  buyerName: string;
+  buyerEmail: string;
+  status: InquiryStatus;
+  emailNotified: boolean;
+  smsNotified: boolean;
+  messages: ConversationMessage[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StoredUser extends User {
+  password: string;
+}
+
+export interface MarketplaceData {
+  vehicles: Vehicle[];
+  photos: VehiclePhoto[];
+  valuations: Valuation[];
+  listings: Listing[];
+}
+
 export interface ListingDetail {
   listing: Listing;
   vehicle: Vehicle;

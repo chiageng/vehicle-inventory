@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ListingGrid } from "@/components/ListingGrid";
-import { mockApi } from "@/lib/mock-api";
+import { api } from "@/lib/api";
 import type { ListingDetail } from "@/lib/types";
 
 export default function HomePage() {
   const [featured, setFeatured] = useState<ListingDetail[]>([]);
 
   useEffect(() => {
-    const listings = mockApi.searchListings({ sort: "newest" });
-    setFeatured(listings.slice(0, 3));
+    api.searchListings({ sort: "newest" }).then((listings) => {
+      setFeatured(listings.slice(0, 3));
+    });
   }, []);
 
   return (

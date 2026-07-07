@@ -1,8 +1,8 @@
-# CarInventory Demo
+# CarInventory — Interactive Preview
 
-Interactive prototype for the Car Valuation & Inventory System.
+Next.js application demonstrating the CarInventory seller, buyer, and admin experiences described in the system proposal.
 
-## Quick start
+## Run locally
 
 ```bash
 npm install
@@ -11,42 +11,39 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Features
+## User flows
 
-- **Sell flow** — Multi-step wizard: vehicle info → photos & condition → instant valuation → publish
-- **Browse** — Search and filter marketplace listings by make, year, price, mileage
-- **Listing detail** — Photo gallery, specs, valuation badge, contact seller form
-- **Dashboard** — View your listings (mock auth via localStorage)
-- **Auth** — Login/register UI (any credentials work in demo mode)
+### Seller / reseller
+1. Register or log in
+2. **Sell Your Car** — complete the wizard and publish (valuation runs at publish)
+3. **My Listings** — track status, edit price, view buyer conversations
+4. Reply to enquiries from the dashboard
 
-## Tech stack
+### Buyer
+1. Browse listings (no login required)
+2. Open a listing and send an enquiry
+3. **My Enquiries** — view seller replies and continue the conversation
 
-- Next.js 14+ (App Router)
-- TypeScript
-- Tailwind CSS
-- Mock API with localStorage persistence (`lib/mock-api.ts`)
-- Client-side valuation engine (`lib/valuation.ts`)
+### Platform admin
+1. Log in as `admin@carinventory.my` / `admin123`
+2. Approve or reject listings in the moderation queue
 
-## Data
+## Data persistence
 
-Seed data includes 8 sample vehicles. User-created listings persist in `localStorage` under key `carval_inventory`.
+Preview data is stored in `data/*.json` (users, marketplace, conversations). Files are created from sample seed data on first run. See `data/README.md`.
 
-To reset data, clear localStorage in browser dev tools or run in console:
+To restore defaults: `npm run reset-data` then restart the server.
 
-```js
-localStorage.removeItem('carval_inventory');
-location.reload();
+## Project structure
+
+```
+app/           Pages and API routes
+components/    UI components
+lib/           Client API, types, valuation engine
+lib/server/    File database and business logic
+data/          Runtime JSON store (gitignored)
 ```
 
-## Documentation
+## Production path
 
-See the `docs/` folder at the project root:
-
-- `system-architecture.md` — High-level architecture
-- `user-stories.md` — Epics and acceptance criteria
-- `database-schema.md` — PostgreSQL schema design
-- `system-design.md` — Flows, valuation algorithm, API contracts
-
-## Out of scope
-
-This is a frontend prototype only. No real backend, database, payments, or email delivery.
+This preview uses JSON files and a rule-based valuation engine. The proposal in `../docs/carinventory-system-proposal.md` describes the production PostgreSQL schema, EZAUTO integration, encryption, and phased rollout.

@@ -8,7 +8,7 @@ import {
   formatMileage,
   vehicleTitle,
 } from "@/lib/format";
-import { mockApi } from "@/lib/mock-api";
+import { api } from "@/lib/api";
 import type { ListingDetail, ListingStatus } from "@/lib/types";
 import { useToast } from "@/components/Toast";
 
@@ -20,8 +20,13 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  function refresh() {
-    setListings(mockApi.getAllListings());
+  async function refresh() {
+    try {
+      const data = await api.getAllListings();
+      setListings(data);
+    } catch {
+      showToast("Could not load listings", "error");
+    }
   }
 
   useEffect(() => {
@@ -40,11 +45,15 @@ export default function AdminPage() {
     { key: "removed", label: "Removed" },
   ];
 
-  function handleStatus(listingId: string, status: ListingStatus) {
-    mockApi.updateListingStatus(listingId, status);
-    showToast(status === "active" ? "Listing approved" : "Listing removed");
-    setExpandedId(null);
-    refresh();
+  async function handleStatus(listingId: string, status: ListingStatus) {
+    try {
+      await api.updateListingStatus(listingId, status);
+      showToast(status === "active" ? "Listing approved" : "Listing removed");
+      setExpandedId(null);
+      await refresh();
+    } catch {
+      showToast("Action failed", "error");
+    }
   }
 
   return (
