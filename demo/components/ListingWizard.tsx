@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/icons";
+import { PlateExamples } from "@/components/PlateExamples";
 import { useToast } from "@/components/Toast";
 import { ValuationPanel } from "@/components/ValuationPanel";
 import { LOCATIONS, MODEL_CC, TAXONOMY, YEAR_OPTIONS, lookupPlate } from "@/lib/catalog";
@@ -300,10 +301,14 @@ export function ListingWizard({
                   Look up plate
                 </button>
               </div>
-              <p className="mt-2 text-xs text-slate-400">
-                Try <span className="font-mono">VHR 2210</span> (hit) or any other plate (miss →
-                manual entry). Data source: EZAUTO Central Vehicle Datahouse (mock).
-              </p>
+              <PlateExamples
+                onPick={setPlateInput}
+                samples={[
+                  { plate: "VHR 2210", note: "Perodua Axia — record found" },
+                  { plate: "WPM 9083", note: "Proton Saga — record found" },
+                ]}
+                missNote="Any other plate → no record, switches to manual entry."
+              />
 
               {lookupState === "found" && spec && (
                 <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4">

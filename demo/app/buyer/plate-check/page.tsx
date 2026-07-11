@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/icons";
+import { PlateExamples } from "@/components/PlateExamples";
 import { useToast } from "@/components/Toast";
 import { ValuationPanel } from "@/components/ValuationPanel";
 import { lookupPlate } from "@/lib/catalog";
@@ -56,6 +57,16 @@ export default function PlateCheckPage() {
           Check
         </button>
       </div>
+      <div className="mx-auto max-w-md">
+        <PlateExamples
+          onPick={setInput}
+          samples={[
+            { plate: "VBU 3421", note: "Myvi — listed for sale" },
+            { plate: "WC 5871", note: "BMW 330i — listed for sale" },
+            { plate: "WPM 9083", note: "Saga — not listed → set alert" },
+          ]}
+        />
+      </div>
 
       {checked && !checked.spec && (
         <div className="mx-auto mt-8 max-w-md rounded-xl border border-amber-200 bg-amber-50 p-5 text-center">
@@ -64,7 +75,7 @@ export default function PlateCheckPage() {
             No record for {checked.plate} in the EZAUTO datahouse
           </p>
           <p className="mt-1 text-xs text-amber-700">
-            The plate may be new, re-registered, or mistyped. Try VBU 3421 in this mockup.
+            The plate may be new, re-registered, or mistyped. Try one of the demo plates above.
           </p>
         </div>
       )}

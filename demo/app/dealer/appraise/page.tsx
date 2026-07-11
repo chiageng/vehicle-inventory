@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/icons";
+import { PlateExamples } from "@/components/PlateExamples";
 import { useToast } from "@/components/Toast";
 import { ValuationPanel } from "@/components/ValuationPanel";
 import { PageHeader } from "@/components/ui";
@@ -88,10 +89,13 @@ export default function DealerAppraisePage() {
           >
             Appraise
           </button>
-          <p className="mt-3 text-xs text-slate-400">
-            Try <span className="font-mono">WPM 9083</span> (Proton Saga, fresh plate not yet
-            listed on the marketplace).
-          </p>
+          <PlateExamples
+            onPick={setPlate}
+            samples={[
+              { plate: "WPM 9083", note: "Proton Saga — walk-in trade-in" },
+              { plate: "VHR 2210", note: "Perodua Axia" },
+            ]}
+          />
         </div>
 
         <div>
