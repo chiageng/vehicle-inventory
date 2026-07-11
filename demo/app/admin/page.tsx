@@ -1,224 +1,99 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import {
-  formatCondition,
-  formatCurrency,
-  formatMileage,
-  vehicleTitle,
-} from "@/lib/format";
-import { api } from "@/lib/api";
-import type { ListingDetail, ListingStatus } from "@/lib/types";
-import { useToast } from "@/components/Toast";
+import Link from "next/link";
+import { Icon } from "@/components/icons";
+import { PageHeader, SectionCard, StatCard } from "@/components/ui";
+import { timeAgo, vehicleTitle } from "@/lib/format";
+import { useDemo } from "@/lib/store";
 
-type Tab = "all" | ListingStatus;
+export default function AdminOverviewPage() {
+  const { listings, dealerApps } = useDemo();
+  const pending = listings.filter((l) => l.status === "pending");
+  const flagged = pending.filter((l) => l.flags.length > 0);
+  const live = listings.filter((l) => l.status === "active");
+  const reported = live.filter((l) => l.reports.length > 0);
+  const pendingDealers = dealerApps.filter((d) => d.status === "pending");
 
-export default function AdminPage() {
-  const { showToast } = useToast();
-  const [listings, setListings] = useState<ListingDetail[]>([]);
-  const [tab, setTab] = useState<Tab>("all");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  async function refresh() {
-    try {
-      const data = await api.getAllListings();
-      setListings(data);
-    } catch {
-      showToast("Could not load listings", "error");
-    }
-  }
-
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  const filtered =
-    tab === "all" ? listings : listings.filter((d) => d.listing.status === tab);
-
-  const pendingCount = listings.filter((d) => d.listing.status === "pending_review").length;
-
-  const tabs: { key: Tab; label: string; count?: number }[] = [
-    { key: "all", label: "All" },
-    { key: "pending_review", label: "Pending", count: pendingCount },
-    { key: "active", label: "Active" },
-    { key: "removed", label: "Removed" },
-  ];
-
-  async function handleStatus(listingId: string, status: ListingStatus) {
-    try {
-      await api.updateListingStatus(listingId, status);
-      showToast(status === "active" ? "Listing approved" : "Listing removed");
-      setExpandedId(null);
-      await refresh();
-    } catch {
-      showToast("Action failed", "error");
-    }
-  }
-
-  return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Listing moderation</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Review, approve, reject, or remove marketplace listings
-          </p>
-        </div>
-        {pendingCount > 0 && (
-          <span className="rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800">
-            {pendingCount} pending approval
-          </span>
-        )}
-      </div>
-
-      <div className="mt-6 flex gap-2 border-b border-slate-200">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t.key
-                ? "border-slate-900 text-slate-900"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {t.label}
-            {t.count !== undefined && t.count > 0 && (
-              <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-xs text-white">
-                {t.count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-4 space-y-3">
-        {filtered.length === 0 ? (
-          <p className="rounded-lg border border-slate-200 bg-white px-4 py-12 text-center text-slate-500">
-            No listings in this tab.
-          </p>
-        ) : (
-          filtered.map((d) => {
-            const isOpen = expandedId === d.listing.id;
-            const photo = d.photos.find((p) => p.isPrimary) ?? d.photos[0];
-
-            return (
-              <div
-                key={d.listing.id}
-                className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
-              >
-                <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-slate-900">{vehicleTitle(d.vehicle)}</div>
-                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
-                      <span className="font-mono">{d.vehicle.plateNumber}</span>
-                      <span>{formatCurrency(d.listing.askingPrice)}</span>
-                      <span className="capitalize">{d.listing.status.replace("_", " ")}</span>
-                      <span
-                        className={
-                          d.listing.listingType === "reseller"
-                            ? "text-purple-600"
-                            : undefined
-                        }
-                      >
-                        {d.listing.listingType}
-                      </span>
-                      <span>
-                        {d.seller.name}
-                        {d.owner ? ` → owner: ${d.owner.name}` : ""}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedId(isOpen ? null : d.listing.id)}
-                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      {isOpen ? "Hide" : "Details"}
-                    </button>
-                    {d.listing.status === "pending_review" && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleStatus(d.listing.id, "active")}
-                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleStatus(d.listing.id, "removed")}
-                          className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    {d.listing.status === "active" && (
-                      <button
-                        type="button"
-                        onClick={() => handleStatus(d.listing.id, "removed")}
-                        className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {isOpen && (
-                  <div className="border-t border-slate-100 bg-slate-50 p-4">
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {photo && (
-                        <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-200 sm:col-span-1">
-                          <Image
-                            src={photo.url}
-                            alt={vehicleTitle(d.vehicle)}
-                            fill
-                            className="object-cover"
-                            sizes="240px"
-                          />
-                        </div>
-                      )}
-                      <dl className="space-y-2 text-sm sm:col-span-1">
-                        <Detail label="Mileage" value={formatMileage(d.vehicle.mileage)} />
-                        <Detail label="Color" value={d.vehicle.color || "—"} />
-                        <Detail label="Transmission" value={d.vehicle.transmission} />
-                        <Detail label="Fuel" value={d.vehicle.fuelType} />
-                        <Detail label="Condition" value={formatCondition(d.vehicle.conditionGrade)} />
-                        <Detail label="Views" value={String(d.listing.viewCount)} />
-                        {d.valuation && (
-                          <Detail
-                            label="Estimate"
-                            value={`${formatCurrency(d.valuation.estimatedLow)} – ${formatCurrency(d.valuation.estimatedHigh)}`}
-                          />
-                        )}
-                      </dl>
-                      {d.vehicle.description && (
-                        <div className="text-sm sm:col-span-2 lg:col-span-1">
-                          <dt className="font-medium text-slate-600">Description</dt>
-                          <dd className="mt-1 text-slate-700">{d.vehicle.description}</dd>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-slate-500">{label}</dt>
-      <dd className="font-medium capitalize text-slate-900">{value}</dd>
+      <PageHeader
+        title="Marketplace overview"
+        description="Risk-based moderation: clean listings auto-publish, flagged ones wait for a human. Runs separately from the public site."
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Flagged for review" value={pending.length} sub="clean listings auto-publish · SLA < 4h" accent={pending.length > 0} />
+        <StatCard label="Auto-flagged" value={flagged.length} sub="fraud & quality signals" />
+        <StatCard
+          label="Reported by buyers"
+          value={reported.length}
+          sub={`of ${live.length} live listings — takedown review`}
+          accent={reported.length > 0}
+        />
+        <StatCard label="Dealer applications" value={pendingDealers.length} sub="pending verification" />
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <SectionCard
+          title="Manual review queue (flagged only)"
+          action={
+            <Link href="/admin/queue" className="text-xs font-medium text-blue-700 hover:underline">
+              Review now →
+            </Link>
+          }
+        >
+          {pending.length === 0 ? (
+            <p className="text-xs text-slate-400">Queue is clear — clean listings publish automatically. 🎉</p>
+          ) : (
+            <ul className="space-y-3">
+              {pending.map((l) => (
+                <li key={l.id} className="flex items-start justify-between gap-3 rounded-lg border border-slate-100 p-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{vehicleTitle(l.spec)}</p>
+                    <p className="text-xs text-slate-500">
+                      {l.sellerName} · submitted {timeAgo(l.listedAt)}
+                    </p>
+                    {l.flags.length > 0 && (
+                      <p className="mt-1 flex items-center gap-1 text-xs font-medium text-amber-600">
+                        <Icon name="warning" className="h-3.5 w-3.5" />
+                        {l.flags.length} auto-flag(s)
+                      </p>
+                    )}
+                  </div>
+                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">
+                    pending
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Moderation signals (SOP 6)">
+          <ul className="space-y-2.5 text-sm text-slate-600">
+            {[
+              ["Duplicate plate", "Same plate as a live listing — likely scam or double-post."],
+              ["Price anomaly", "Asking price >15% below EZAUTO market value triggers a too-good-to-be-true check."],
+              ["Low photo count", "Listings with a single photo get flagged for quality review."],
+              ["Custom vehicle spec", "Make/model/variant entered outside the catalogue — reviewed and mapped so valuation & search stay accurate."],
+              ["Photo condition mismatch", "AI compares uploaded photos against the declared condition grade — unconfirmed claims are held for review, and the valuation re-runs if the grade is corrected."],
+              ["Disposable email", "Seller signed up with a throwaway email domain."],
+              ["Buyer reports", "Every listing has a Report button — reported live listings queue here for takedown review with the reasons attached."],
+            ].map(([rule, why]) => (
+              <li key={rule} className="flex gap-2.5">
+                <Icon name="shield" className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
+                <span>
+                  <span className="font-semibold text-slate-800">{rule}.</span> {why}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 border-t border-slate-100 pt-3 text-[11px] text-slate-400">
+            Flags assist the reviewer — every approve/reject/takedown decision is logged with the
+            operator and reason.
+          </p>
+        </SectionCard>
+      </div>
     </div>
   );
 }

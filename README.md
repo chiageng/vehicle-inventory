@@ -1,12 +1,14 @@
-# CarInventory
+# EzAutoInventory (CarInventory)
 
-Malaysia-market car valuation and inventory marketplace. Private sellers list vehicles, receive MYR valuations at publish time, and reach buyers through a moderated marketplace. Production valuations integrate with the EZAUTO Central Vehicle Datahouse.
+Malaysia-market car marketplace and valuation platform. Private sellers and dealers list
+vehicles, get MYR valuations powered by the EZAUTO Central Vehicle Datahouse, and reach buyers
+through a moderated marketplace with on-platform chat.
 
 ## Repository structure
 
 ```
-├── demo/     Interactive Next.js preview (sell, browse, enquiries, admin)
-└── docs/     System proposal — schema, data strategy, rollout plan
+├── demo/     Interactive Next.js mockup — 4 portals (buyer, seller, dealer, admin)
+└── docs/     Requirements (user stories), critical flows (SOPs), system proposal
 ```
 
 ## Quick start
@@ -17,55 +19,42 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) and pick a portal. The mockup has **no
+database and no real authentication** — login pages accept any credentials (or skip sign-in),
+and all data is in-memory and resets on refresh. See `demo/README.md` for a step-by-step pitch
+walk-through.
 
-### Preview accounts
+## Portals
 
-| Role     | Email                      | Password     |
-| -------- | -------------------------- | ------------ |
-| Admin    | `admin@carinventory.my`    | `admin123`   |
-| Reseller | `reseller@carinventory.my` | `reseller123`|
-| Seller   | `sarah@example.com`        | `demo123`    |
+| Portal | Route prefix | Layout | Highlights |
+|---|---|---|---|
+| **Buyer** | `/buyer` | Top navbar | Browse & compare, price-vs-market badges, plate check with valuation, masked chat |
+| **Private seller** | `/seller` | Left sidebar | Plate auto-fill, two-stage valuation, price-deviation warning, enquiry inbox |
+| **Dealer** | `/dealer` | Left sidebar | Instant appraisal (trade-in vs retail), inventory & consignments, lead inbox |
+| **Admin** | `/admin` | Left sidebar | Risk-based review queue (flagged listings only), takedowns, dealer verification |
 
-New accounts can be registered from the sign-up page. Buyers can browse and enquire without an account; registered buyers see seller replies under **My Enquiries**.
+## The critical flow — valuation
 
-### Reset sample data
+Plate → EZAUTO datahouse lookup (spec auto-filled) → instant estimate from identity fields →
+refined valuation after mileage/condition → asking price checked against market value
+(deviation warnings for sellers, price badges for buyers, fraud flags for admin).
+Mock integration points: `demo/lib/catalog.ts` (plate index) and `demo/lib/valuation.ts` (SaaS).
 
-```bash
-cd demo
-npm run reset-data
-```
-
-Restart the dev server after resetting.
-
-## Preview features
-
-| Area | Capability |
-|------|------------|
-| **Sell** | Guided listing wizard — vehicle details, photos, valuation at publish, admin review queue |
-| **Browse** | Search and filter by make, model, year, price, mileage |
-| **Enquiries** | Two-way buyer–seller messaging with conversation history |
-| **Dashboard** | Sellers manage listings, update prices, reply to buyers |
-| **Admin** | Approve or remove listings (separate moderation console) |
-
-## Tech stack (preview)
+## Tech stack (mockup)
 
 - Next.js 16 (App Router), TypeScript, Tailwind CSS
-- REST API routes with JSON file persistence (`demo/data/`)
-- Cookie-based authentication
-- Rule-based valuation engine (`demo/lib/valuation.ts`) — production path uses EZAUTO per proposal
+- Pure client-side state (`demo/lib/store.tsx`) — no API routes, no persistence
+- Simulated EZAUTO valuation engine — production path integrates the real SaaS per proposal
 
 ## Documentation
 
-Full system proposal: [`docs/carinventory-system-proposal.md`](docs/carinventory-system-proposal.md)
-
-Covers database schema, multi-source data strategy (seller input vs EZAUTO valuation), user stories, and a six-phase rollout plan.
+- [`docs/requirements.md`](docs/requirements.md) — user stories per role
+- [`docs/flow.md`](docs/flow.md) — critical flows / SOPs with diagrams
+- [`docs/carinventory-system-proposal.md`](docs/carinventory-system-proposal.md) — schema, data strategy, rollout plan
 
 ## Market defaults
 
-- Currency: **MYR**
-- Mileage: **km**
-- Vehicle identity: **number plate** (seller-facing)
+- Currency: **MYR** · Mileage: **km** · Vehicle identity: **number plate** (seller-facing)
 
 ## License
 

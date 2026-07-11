@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "reset-data": "node scripts/reset-data.mjs"
+    "lint": "eslint"
   },
   "dependencies": {
     "next": "16.2.10",

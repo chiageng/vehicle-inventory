@@ -1,49 +1,64 @@
-# CarInventory — Interactive Preview
+# EzAutoInventory — Interactive Mockup
 
-Next.js application demonstrating the CarInventory seller, buyer, and admin experiences described in the system proposal.
+Next.js mockup of the EzAutoInventory car marketplace, built to demonstrate the flows in
+`../docs/requirements.md` and `../docs/flow.md`. Everything is simulated — **no database, no real
+authentication, no API keys**. All data lives in memory and resets on refresh.
 
-## Run locally
+## Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) and pick a portal. The login pages accept any
+credentials (or skip sign-in entirely).
 
-## User flows
+## Portals
 
-### Seller / reseller
-1. Register or log in
-2. **Sell Your Car** — complete the wizard and publish (valuation runs at publish)
-3. **My Listings** — track status, edit price, view buyer conversations
-4. Reply to enquiries from the dashboard
+| Portal | Prefix | Layout | Persona |
+| --- | --- | --- | --- |
+| Buyer marketplace | `/buyer` | Top navbar | Guest buyer (no account) |
+| Private seller | `/seller` | Left sidebar | Lim Wei Jian |
+| Dealer | `/dealer` | Left sidebar | Prestige Auto Sdn Bhd |
+| Platform admin | `/admin` | Left sidebar | Aisyah Rahman |
 
-### Buyer
-1. Browse listings (no login required)
-2. Open a listing and send an enquiry
-3. **My Enquiries** — view seller replies and continue the conversation
+## Demo script (pitch walk-through)
 
-### Platform admin
-1. Log in as `admin@carinventory.my` / `admin123`
-2. Approve or reject listings in the moderation queue
+1. **Seller — sell a car** (`/seller/sell`): enter plate `VHR 2210` → spec auto-fills from the
+   mock EZAUTO datahouse → add mileage/condition → photos (AI check verifies the declared
+   condition — try "Excellent" with fewer than 3 photos to trip it) → valuation is revealed →
+   set the price last (try one 20% above market to trigger the deviation warning) → submit.
+   A clean submission **goes live instantly**; price it >15% below market (or pick only 1 photo)
+   to see it held for manual review instead.
+2. **Admin — review the flagged ones** (`/admin/queue`): only flagged submissions sit here. Two
+   are seeded: one priced 40% below market, one with a duplicate plate.
+3. **Buyer — find it** (`/buyer/browse`): filter, compare 2–3 cars, open a listing, see the
+   price-vs-market badge, send an enquiry or offer (contact masked).
+4. **Buyer — plate check** (`/buyer/plate-check`): check `VBU 3421` (live listing match) or
+   `WPM 9083` (not listed → set an alert).
+5. **Dealer — appraise** (`/dealer/appraise`): plate `WPM 9083` → trade-in vs retail range →
+   "Add to inventory" pre-fills the wizard with consignment support.
+6. **Seller/Dealer — messages** (`/seller/messages`, `/dealer/leads`): reply to offers and
+   viewing requests.
 
-## Data persistence
+## Key mock points (real integrations in production)
 
-Preview data is stored in `data/*.json` (users, marketplace, conversations). Files are created from sample seed data on first run. See `data/README.md`.
+- `lib/catalog.ts` — plate → spec lookup (mock of the EZAUTO Central Vehicle Datahouse index)
+- `lib/valuation.ts` — two-stage valuation + price-deviation rules (mock of the EZAUTO SaaS)
+- `lib/mock-data.ts` — seeded listings, conversations, dealer applications
+- `lib/store.tsx` — in-memory state (replaces DB + API); mutations mirror the future BFF endpoints
 
-To restore defaults: `npm run reset-data` then restart the server.
-
-## Project structure
+## Structure
 
 ```
-app/           Pages and API routes
-components/    UI components
-lib/           Client API, types, valuation engine
-lib/server/    File database and business logic
-data/          Runtime JSON store (gitignored)
+app/
+  page.tsx        Portal selection landing
+  login/          Mock sign-in (any credentials work)
+  buyer/          Marketplace: browse, compare, listing detail, plate check, saved, messages
+  seller/         Dashboard, sell wizard, my listings, enquiries
+  dealer/         Dashboard, instant appraisal, inventory (+ consignment), lead inbox
+  admin/          Overview, review queue (flagged listings only), all listings, dealer verification
+components/       Shared UI (PortalShell, ListingWizard, ChatPanel, ValuationPanel, …)
+lib/              Types, catalog, valuation engine, mock data, in-memory store
 ```
-
-## Production path
-
-This preview uses JSON files and a rule-based valuation engine. The proposal in `../docs/carinventory-system-proposal.md` describes the production PostgreSQL schema, EZAUTO integration, encryption, and phased rollout.

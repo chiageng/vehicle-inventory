@@ -1,85 +1,91 @@
-import type { ConditionGrade, ValuationFactors } from "./types";
+import { BASE_VALUES_2023, CURRENT_YEAR, TAXONOMY } from "./catalog";
+import type {
+  Valuation,
+  VehicleCondition,
+  VehicleSpec,
+} from "./types";
 
-const BASE_VALUES: Record<string, number> = {
-  "Honda|Accord|2019": 103000,
-  "Honda|Accord|2020": 110000,
-  "Honda|Civic|2021": 99000,
-  "Toyota|Camry|2018": 92000,
-  "Toyota|Camry|2020": 108000,
-  "Toyota|RAV4|2021": 125000,
-  "Ford|F-150|2019": 150000,
-  "Ford|Mustang|2018": 132000,
-  "Tesla|Model 3|2022": 165000,
-  "BMW|3 Series|2019": 136000,
-  "Chevrolet|Silverado|2020": 160000,
-  "Nissan|Altima|2019": 82000,
-  "Hyundai|Elantra|2021": 87000,
-  "Mazda|CX-5|2020": 113000,
-  "Subaru|Outback|2019": 106000,
-};
+/**
+ * Mock of the EZAUTO valuation SaaS. It returns a single market value (MYR) —
+ * no range. Two-stage per SOP 2: an instant estimate from identity fields
+ * alone, refined (more accurate) once condition fields are supplied.
+ */
 
-const CONDITION_MULTIPLIERS: Record<ConditionGrade, number> = {
-  excellent: 1.05,
+const REF_YEAR = 2023;
+const YEARLY_DEPRECIATION = 0.9;
+const EXPECTED_KM_PER_YEAR = 18000;
+const RM_PER_KM = 0.08;
+
+const GRADE_MULTIPLIERS: Record<VehicleCondition["grade"], number> = {
+  excellent: 1.06,
   good: 1.0,
   fair: 0.9,
-  poor: 0.75,
+  poor: 0.78,
 };
 
-const EXPECTED_KM_PER_YEAR = 19000;
-const KM_ADJUSTMENT_RATE = -0.031;
-
-export interface ValuationInput {
-  make: string;
-  model: string;
-  year: number;
-  mileage: number;
-  conditionGrade: ConditionGrade;
+function variantMultiplier(spec: VehicleSpec): number {
+  const variants = TAXONOMY[spec.make]?.[spec.model] ?? [];
+  const idx = Math.max(0, variants.indexOf(spec.variant));
+  return 0.92 + idx * 0.05;
 }
 
-export interface ValuationResult {
-  estimatedLow: number;
-  estimatedMid: number;
-  estimatedHigh: number;
-  factors: ValuationFactors;
-  algorithmVersion: "v1.0-rule-based";
-}
+export function valuate(
+  spec: VehicleSpec,
+  condition?: VehicleCondition
+): Valuation {
+  const base = BASE_VALUES_2023[`${spec.make}|${spec.model}`] ?? 65000;
+  const age = Math.max(0, REF_YEAR - spec.year);
+  const baseValue = Math.round(
+    base * Math.pow(YEARLY_DEPRECIATION, age) * variantMultiplier(spec)
+  );
 
-function lookupBaseValue(make: string, model: string, year: number): number {
-  const key = `${make}|${model}|${year}`;
-  if (BASE_VALUES[key]) return BASE_VALUES[key];
+  let mileageAdjustment = 0;
+  let conditionMultiplier = 1;
 
-  const currentYear = new Date().getFullYear();
-  const age = Math.max(0, currentYear - year);
-  const depreciation = Math.pow(0.88, age);
-  return Math.round(141000 * depreciation);
-}
+  if (condition) {
+    const expectedKm = Math.max(1, CURRENT_YEAR - spec.year) * EXPECTED_KM_PER_YEAR;
+    mileageAdjustment = Math.round((expectedKm - condition.mileageKm) * RM_PER_KM);
+    conditionMultiplier = GRADE_MULTIPLIERS[condition.grade];
+    if (condition.owners > 2) conditionMultiplier *= 0.97;
+    if (!condition.accidentFree) conditionMultiplier *= 0.85;
+    if (!condition.floodFree) conditionMultiplier *= 0.7;
+  }
 
-export function computeValuation(input: ValuationInput): ValuationResult {
-  const baseValue = lookupBaseValue(input.make, input.model, input.year);
-  const currentYear = new Date().getFullYear();
-  const expectedMileage = Math.max(0, currentYear - input.year) * EXPECTED_KM_PER_YEAR;
-  const mileageDelta = input.mileage - expectedMileage;
-  const mileageAdjustment = Math.round(mileageDelta * KM_ADJUSTMENT_RATE);
-  const conditionMultiplier = CONDITION_MULTIPLIERS[input.conditionGrade];
-
-  const estimatedMid = Math.max(
+  const value = Math.max(
     5000,
     Math.round((baseValue + mileageAdjustment) * conditionMultiplier)
   );
-  const estimatedLow = Math.round(estimatedMid * 0.92);
-  const estimatedHigh = Math.round(estimatedMid * 1.08);
 
   return {
-    estimatedLow,
-    estimatedMid,
-    estimatedHigh,
+    value,
+    stage: condition ? "refined" : "instant",
+    source: "ezauto",
     factors: {
       baseValue,
       mileageAdjustment,
-      conditionMultiplier,
-      expectedMileage,
-      actualMileage: input.mileage,
+      conditionMultiplier: Math.round(conditionMultiplier * 100) / 100,
     },
-    algorithmVersion: "v1.0-rule-based",
   };
+}
+
+/** SOP 3 — price deviation vs the retrieved valuation. Advisory threshold ±15%. */
+export const DEVIATION_THRESHOLD = 0.15;
+
+export type DeviationStatus = "market" | "over" | "under";
+
+export interface Deviation {
+  pct: number; // e.g. -0.31 = 31% below mid
+  status: DeviationStatus;
+}
+
+export function priceDeviation(askingPrice: number, value: number): Deviation {
+  const pct = (askingPrice - value) / value;
+  const status: DeviationStatus =
+    pct > DEVIATION_THRESHOLD ? "over" : pct < -DEVIATION_THRESHOLD ? "under" : "market";
+  return { pct, status };
+}
+
+export function formatPct(pct: number): string {
+  const abs = Math.round(Math.abs(pct) * 100);
+  return `${abs}%`;
 }

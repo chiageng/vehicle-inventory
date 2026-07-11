@@ -29,7 +29,7 @@ This proposal covers three things: §1 the database schema, §2 how we store and
 
 ### 1.2 Schema diagram
 
-CarInventory stores what EZAUTO returns — not the datahouse itself. On each production valuate call, the API writes an encrypted `source_records` row (raw EZAUTO JSON) and a `valuations` row (MYR low / mid / high derived from that response). Rule-engine fallback writes `valuations` only (`source_record_id` null).
+CarInventory stores what EZAUTO returns — not the datahouse itself. On each production valuate call, the API writes an encrypted `source_records` row (raw EZAUTO JSON) and a `valuations` row (the MYR value from that response). Rule-engine fallback writes `valuations` only (`source_record_id` null).
 
 ```mermaid
 erDiagram
@@ -83,9 +83,7 @@ erDiagram
         uuid id PK
         uuid vehicle_id FK
         uuid source_record_id FK "nullable"
-        decimal estimated_low
-        decimal estimated_mid
-        decimal estimated_high
+        decimal estimated_value
         jsonb factors_json
         varchar algorithm_version "ezauto-v1 | v1.0-rule-based"
         boolean source_fetched "EZAUTO upstream miss"
@@ -192,7 +190,7 @@ One rule: **seller input wins; EZAUTO wins on valuation only.**
 
 | Field                                                          | Authoritative source                            |
 | -------------------------------------------------------------- | ----------------------------------------------- |
-| Valuation (low / mid / high)                                   | EZAUTO datahouse (rule engine v1.0 on fallback) |
+| Valuation (single MYR value)                                   | EZAUTO datahouse (rule engine v1.0 on fallback) |
 | Plate, make, model, year, trim, transmission, fuel_type, color | Seller                                          |
 | Mileage, condition, description, photos                        | Seller                                          |
 | Asking price                                                   | Seller                                          |

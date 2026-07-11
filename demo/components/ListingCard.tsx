@@ -1,62 +1,87 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { PriceBadge } from "@/components/PriceBadge";
+import { Icon } from "@/components/icons";
 import { formatCurrency, formatMileage, vehicleTitle } from "@/lib/format";
-import type { ListingDetail } from "@/lib/types";
+import { useDemo } from "@/lib/store";
+import type { Listing } from "@/lib/types";
 
-interface ListingCardProps {
-  listing: ListingDetail;
-}
-
-export function ListingCard({ listing }: ListingCardProps) {
-  const { vehicle, valuation } = listing;
-  const primaryPhoto =
-    listing.photos.find((p) => p.isPrimary) ?? listing.photos[0];
-  const title = vehicleTitle(vehicle);
+export function ListingCard({
+  listing,
+  compareChecked,
+  onCompareToggle,
+}: {
+  listing: Listing;
+  compareChecked?: boolean;
+  onCompareToggle?: () => void;
+}) {
+  const { favourites, toggleFavourite } = useDemo();
+  const isFav = favourites.includes(listing.id);
 
   return (
-    <Link
-      href={`/listings/${listing.listing.id}`}
-      className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
-    >
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-        {primaryPhoto ? (
-          <Image
-            src={primaryPhoto.url}
-            alt={title}
-            fill
-            className="object-cover transition-transform group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, 33vw"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-slate-400">
-            No photo
-          </div>
-        )}
-        {valuation && (
-          <span className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-xs font-medium text-white">
-            Est. {formatCurrency(valuation.estimatedMid)}
+    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+      <Link href={`/buyer/listings/${listing.id}`} className="relative block aspect-[16/10] bg-slate-100">
+        <Image
+          src={listing.photos[0]}
+          alt={vehicleTitle(listing.spec)}
+          fill
+          className="object-cover transition group-hover:scale-[1.02]"
+          sizes="(max-width: 768px) 100vw, 33vw"
+        />
+        <PriceBadge
+          price={listing.askingPrice}
+          valuation={listing.valuation}
+          className="absolute left-2 top-2 shadow-sm"
+        />
+      </Link>
+      <button
+        onClick={() => toggleFavourite(listing.id)}
+        aria-label="Save to favourites"
+        className={`absolute right-2 top-2 rounded-full p-1.5 shadow-sm transition ${
+          isFav ? "bg-red-500 text-white" : "bg-white/90 text-slate-400 hover:text-red-500"
+        }`}
+      >
+        <Icon name="heart" className="h-4 w-4" />
+      </button>
+
+      <div className="flex flex-1 flex-col p-4">
+        <Link href={`/buyer/listings/${listing.id}`}>
+          <h3 className="text-sm font-semibold text-slate-900 group-hover:text-blue-700">
+            {vehicleTitle(listing.spec)}
+          </h3>
+        </Link>
+        <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(listing.askingPrice)}</p>
+        <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-slate-500">
+          <span className="rounded bg-slate-100 px-1.5 py-0.5">{formatMileage(listing.condition.mileageKm)}</span>
+          <span className="rounded bg-slate-100 px-1.5 py-0.5 capitalize">{listing.spec.transmission}</span>
+          <span className="rounded bg-slate-100 px-1.5 py-0.5">{listing.location}</span>
+        </div>
+        <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+          <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${listing.sellerType === "dealer" ? "text-blue-700" : "text-slate-500"}`}>
+            {listing.sellerType === "dealer" && <Icon name="shield" className="h-3.5 w-3.5" />}
+            {listing.sellerType === "dealer" ? "Verified dealer" : "Private seller"}
           </span>
-        )}
-        {listing.listing.listingType === "reseller" && (
-          <span className="absolute top-2 right-2 rounded-md bg-purple-600/90 px-2 py-1 text-xs font-medium text-white">
-            Reseller
-          </span>
-        )}
+          {onCompareToggle && (
+            <label
+              className={`flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                compareChecked
+                  ? "border-blue-600 bg-blue-600 text-white"
+                  : "border-slate-300 text-slate-600 hover:border-blue-400 hover:text-blue-700"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={compareChecked ?? false}
+                onChange={onCompareToggle}
+                className="h-3.5 w-3.5 rounded border-slate-300 accent-white"
+              />
+              Compare
+            </label>
+          )}
+        </div>
       </div>
-      <div className="p-4">
-        <h3 className="font-semibold text-slate-900 group-hover:text-teal-600">
-          {title}
-        </h3>
-        <p className="mt-1 text-sm text-slate-500">
-          {formatMileage(vehicle.mileage)} · {vehicle.color}
-        </p>
-        <p className="mt-1 text-xs font-mono font-medium tracking-wide text-slate-400">
-          {vehicle.plateNumber}
-        </p>
-        <p className="mt-3 text-xl font-bold text-slate-900">
-          {formatCurrency(listing.listing.askingPrice)}
-        </p>
-      </div>
-    </Link>
+    </div>
   );
 }

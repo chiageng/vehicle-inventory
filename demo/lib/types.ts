@@ -1,180 +1,114 @@
-export type UserRole = "seller" | "buyer" | "admin" | "reseller";
-export type ListingType = "owner" | "reseller";
-export type VehicleStatus = "draft" | "pending_review" | "active" | "sold" | "removed";
-export type ListingStatus = "draft" | "pending_review" | "active" | "sold" | "removed";
+export type Role = "buyer" | "seller" | "dealer" | "admin";
+
 export type ConditionGrade = "excellent" | "good" | "fair" | "poor";
-export type TransmissionType = "automatic" | "manual" | "cvt";
-export type FuelType = "gas" | "diesel" | "electric" | "hybrid";
-export type InquiryStatus = "new" | "read" | "replied" | "closed";
-export type SortOption = "price_asc" | "price_desc" | "newest" | "mileage_asc";
+export type Transmission = "automatic" | "manual";
+export type FuelType = "petrol" | "diesel" | "hybrid" | "electric";
+export type SellerType = "private" | "dealer";
+export type ListingStatus =
+  | "pending"
+  | "active"
+  | "rejected"
+  | "sold"
+  | "withdrawn"
+  | "removed";
+export type ValuationStage = "instant" | "refined";
 
-export interface User {
-  id: string;
-  email: string;
-  phone: string;
-  name: string;
-  role: UserRole;
-  createdAt: string;
-}
-
-export interface VehiclePhoto {
-  id: string;
-  vehicleId: string;
-  url: string;
-  sortOrder: number;
-  isPrimary: boolean;
-}
-
-export interface Vehicle {
-  id: string;
-  plateNumber: string;
+export interface VehicleSpec {
+  plate: string;
   make: string;
   model: string;
+  variant: string;
   year: number;
-  trim: string;
-  mileage: number;
-  color: string;
-  transmission: TransmissionType;
+  engineCc: number;
+  transmission: Transmission;
   fuelType: FuelType;
-  conditionGrade: ConditionGrade;
-  description: string;
-  status: VehicleStatus;
-  sellerId: string;
-  createdAt: string;
-  updatedAt: string;
+  color: string;
+}
+
+export interface VehicleCondition {
+  mileageKm: number;
+  grade: ConditionGrade;
+  owners: number;
+  accidentFree: boolean;
+  floodFree: boolean;
 }
 
 export interface ValuationFactors {
   baseValue: number;
   mileageAdjustment: number;
   conditionMultiplier: number;
-  expectedMileage: number;
-  actualMileage: number;
 }
 
 export interface Valuation {
-  id: string;
-  vehicleId: string;
-  estimatedLow: number;
-  estimatedMid: number;
-  estimatedHigh: number;
+  /** Single market value (MYR) retrieved from the valuation SaaS. */
+  value: number;
+  stage: ValuationStage;
+  source: "ezauto" | "fallback";
   factors: ValuationFactors;
-  algorithmVersion: string;
-  createdAt: string;
+}
+
+export interface ListingReport {
+  reason: string;
+  at: string;
 }
 
 export interface Listing {
   id: string;
-  vehicleId: string;
-  sellerId: string;
-  ownerId: string | null;
-  listingType: ListingType;
+  spec: VehicleSpec;
+  condition: VehicleCondition;
+  description: string;
+  photos: string[];
+  location: string;
+  sellerType: SellerType;
+  sellerName: string;
+  consignmentOwner?: string;
   askingPrice: number;
+  valuation: Valuation;
   status: ListingStatus;
-  viewCount: number;
-  listedAt: string | null;
-  expiresAt: string | null;
-  createdAt: string;
-  updatedAt: string;
+  views: number;
+  listedAt: string;
+  flags: string[];
+  /** Buyer reports on a live listing — the admin's takedown signal. */
+  reports: ListingReport[];
+  rejectReason?: string;
 }
 
-export interface Inquiry {
-  id: string;
-  listingId: string;
-  buyerId: string | null;
-  contactName: string;
-  contactEmail: string;
-  message: string;
-  status: InquiryStatus;
-  emailNotified: boolean;
-  smsNotified: boolean;
-  replyMessage: string | null;
-  repliedAt: string | null;
-  buyerEmailNotified: boolean;
-  createdAt: string;
-}
+export type NewListingInput = Omit<
+  Listing,
+  "id" | "status" | "views" | "listedAt" | "flags" | "reports" | "rejectReason"
+>;
 
-export interface ConversationMessage {
+export type MessageKind = "text" | "offer" | "viewing";
+
+export interface ChatMessage {
   id: string;
   from: "buyer" | "seller";
-  senderId: string | null;
-  senderName: string;
   text: string;
-  createdAt: string;
+  kind: MessageKind;
+  at: string;
 }
 
 export interface Conversation {
   id: string;
   listingId: string;
-  sellerId: string;
-  buyerId: string | null;
   buyerName: string;
-  buyerEmail: string;
-  status: InquiryStatus;
-  emailNotified: boolean;
-  smsNotified: boolean;
-  messages: ConversationMessage[];
-  createdAt: string;
-  updatedAt: string;
+  messages: ChatMessage[];
+  unread: boolean;
 }
 
-export interface StoredUser extends User {
-  password: string;
+export interface DealerApplication {
+  id: string;
+  businessName: string;
+  ssmNumber: string;
+  contactName: string;
+  phone: string;
+  status: "pending" | "verified" | "rejected";
+  appliedAt: string;
 }
 
-export interface MarketplaceData {
-  vehicles: Vehicle[];
-  photos: VehiclePhoto[];
-  valuations: Valuation[];
-  listings: Listing[];
-}
-
-export interface ListingDetail {
-  listing: Listing;
-  vehicle: Vehicle;
-  valuation: Valuation | null;
-  photos: VehiclePhoto[];
-  seller: Pick<User, "id" | "name">;
-  owner: Pick<User, "id" | "name"> | null;
-}
-
-export interface ListingFilters {
-  make?: string;
-  model?: string;
-  yearMin?: number;
-  yearMax?: number;
-  priceMin?: number;
-  priceMax?: number;
-  mileageMax?: number;
-  sort?: SortOption;
-}
-
-export interface VehicleInput {
-  plateNumber: string;
-  make: string;
-  model: string;
-  year: number;
-  trim: string;
-  mileage: number;
-  color: string;
-  transmission: TransmissionType;
-  fuelType: FuelType;
-  conditionGrade: ConditionGrade;
-  description: string;
-  photos: { url: string; sortOrder: number; isPrimary: boolean }[];
-  clientOwnerName?: string;
-}
-
-export interface PublishResult {
-  listing: Listing;
-  valuation: Valuation;
-}
-
-export interface AppData {
-  users: User[];
-  vehicles: Vehicle[];
-  photos: VehiclePhoto[];
-  valuations: Valuation[];
-  listings: Listing[];
-  inquiries: Inquiry[];
+export interface SavedSearch {
+  id: string;
+  label: string;
+  criteria: string;
+  newMatches: number;
 }
