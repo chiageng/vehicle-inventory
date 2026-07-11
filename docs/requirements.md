@@ -29,6 +29,7 @@ Read as: *As a [Role], I want [Goal], so that [So that…].*
 | sell a client's vehicle on the marketplace | the owner reaches buyers without listing the car themselves |
 | manage all my inventory and client sales in one dashboard | I stay on top of every unit and consignment without losing track |
 | list vehicles quickly via plate auto-fill, individually or in bulk | stocking the marketplace doesn't consume my day |
+| list used, recon and brand-new units under one inventory | my whole stock mix reaches buyers on one marketplace |
 | set my own asking price per vehicle and see a warning when it deviates from market valuation | I price competitively and spot mistakes before publishing |
 | act as the enquiry contact for client listings | the owner gets professional representation without handling buyer calls |
 | receive all buyer leads in one inbox across my listings | no lead is missed and my team can follow up |
@@ -38,6 +39,7 @@ Read as: *As a [Role], I want [Goal], so that [So that…].*
 | Goal | So that… |
 | ---- | -------- |
 | browse and search vehicles without creating an account | I can shortlist options with zero friction |
+| filter by new, used (second-hand) or recon cars | I only see the category I'm shopping for |
 | search by plate number and see the vehicle's data and market valuation | I can check any car — on or off the platform — before I commit |
 | compare listings on price, mileage, and spec | I focus on the best-value cars before I enquire |
 | see how a listing's asking price compares to its market valuation | I judge whether it's fairly priced before I contact anyone |

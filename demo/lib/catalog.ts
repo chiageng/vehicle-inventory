@@ -26,6 +26,7 @@ export const TAXONOMY: Record<string, Record<string, string[]>> = {
     Vios: ["1.5 E", "1.5 G"],
     Hilux: ["2.4 E", "2.8 Rogue"],
     "Corolla Cross": ["1.8 G", "1.8 V"],
+    Harrier: ["2.0 Luxury", "2.0 Premium"],
   },
   Mazda: {
     "CX-5": ["2.0 Mid", "2.0 High"],
@@ -52,6 +53,7 @@ export const MODEL_CC: Record<string, number> = {
   "Toyota|Vios": 1496,
   "Toyota|Hilux": 2755,
   "Toyota|Corolla Cross": 1798,
+  "Toyota|Harrier": 1986,
   "Mazda|CX-5": 1998,
   "Mazda|Mazda3": 1998,
   "BMW|3 Series": 1998,
@@ -72,6 +74,7 @@ export const BASE_VALUES_2023: Record<string, number> = {
   "Toyota|Vios": 86000,
   "Toyota|Hilux": 145000,
   "Toyota|Corolla Cross": 124000,
+  "Toyota|Harrier": 178000,
   "Mazda|CX-5": 132000,
   "Mazda|Mazda3": 138000,
   "BMW|3 Series": 245000,

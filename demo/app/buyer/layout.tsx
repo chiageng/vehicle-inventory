@@ -9,7 +9,7 @@ import { useDemo } from "@/lib/store";
 import { PERSONAS } from "@/lib/mock-data";
 
 const NAV = [
-  { href: "/buyer/browse", label: "Buy cars" },
+  { href: "/buyer", label: "Buy cars" },
   { href: "/buyer/plate-check", label: "Plate check" },
   { href: "/buyer/saved", label: "Saved" },
   { href: "/buyer/messages", label: "Messages" },
@@ -29,7 +29,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
             <Logo href="/buyer" />
             <nav className="hidden items-center gap-1 md:flex">
               {NAV.map((item) => {
-                const active = pathname.startsWith(item.href);
+                const active = item.href === "/buyer" ? pathname === "/buyer" : pathname.startsWith(item.href);
                 return (
                   <Link
                     key={item.href}
@@ -84,7 +84,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
         {menuOpen && (
           <nav className="border-t border-slate-200 bg-white px-4 py-3 md:hidden">
             {NAV.map((item) => {
-              const active = pathname.startsWith(item.href);
+              const active = item.href === "/buyer" ? pathname === "/buyer" : pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.href}

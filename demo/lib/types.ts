@@ -4,6 +4,7 @@ export type ConditionGrade = "excellent" | "good" | "fair" | "poor";
 export type Transmission = "automatic" | "manual";
 export type FuelType = "petrol" | "diesel" | "hybrid" | "electric";
 export type SellerType = "private" | "dealer";
+export type CarType = "new" | "used" | "recon";
 export type ListingStatus =
   | "pending"
   | "active"
@@ -55,6 +56,7 @@ export interface ListingReport {
 export interface Listing {
   id: string;
   spec: VehicleSpec;
+  carType: CarType;
   condition: VehicleCondition;
   description: string;
   photos: string[];

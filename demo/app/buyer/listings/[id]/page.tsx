@@ -39,7 +39,7 @@ export default function BuyerListingDetailPage() {
     return (
       <div className="mx-auto max-w-7xl px-4 py-20 text-center sm:px-6">
         <p className="text-lg text-slate-600">This listing is not available.</p>
-        <Link href="/buyer/browse" className="mt-4 inline-block text-blue-700 hover:underline">
+        <Link href="/buyer" className="mt-4 inline-block text-blue-700 hover:underline">
           ← Back to browse
         </Link>
       </div>
@@ -62,7 +62,7 @@ export default function BuyerListingDetailPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <Link href="/buyer/browse" className="text-sm text-blue-700 hover:underline">
+      <Link href="/buyer" className="text-sm text-blue-700 hover:underline">
         ← Back to browse
       </Link>
 
@@ -100,9 +100,24 @@ export default function BuyerListingDetailPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
-                <p className="mt-1.5 inline-block rounded-md bg-slate-100 px-2.5 py-1 font-mono text-sm font-semibold tracking-wider text-slate-700">
-                  {listing.spec.plate}
-                </p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  {listing.spec.plate !== "—" && (
+                    <p className="inline-block rounded-md bg-slate-100 px-2.5 py-1 font-mono text-sm font-semibold tracking-wider text-slate-700">
+                      {listing.spec.plate}
+                    </p>
+                  )}
+                  {listing.carType !== "used" && (
+                    <span
+                      className={`rounded-md px-2.5 py-1 text-sm font-semibold ${
+                        listing.carType === "new"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-violet-100 text-violet-700"
+                      }`}
+                    >
+                      {listing.carType === "new" ? "Brand new" : "Recon import"} · unregistered
+                    </span>
+                  )}
+                </div>
               </div>
               <button
                 onClick={() => toggleFavourite(listing.id)}

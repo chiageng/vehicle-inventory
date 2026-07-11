@@ -11,7 +11,7 @@ import { formatCurrency, vehicleTitle } from "@/lib/format";
 import { PERSONAS, PHOTO_POOL } from "@/lib/mock-data";
 import { useDemo } from "@/lib/store";
 import { DEVIATION_THRESHOLD, formatPct, priceDeviation, valuate } from "@/lib/valuation";
-import type { ConditionGrade, Transmission, VehicleCondition, VehicleSpec } from "@/lib/types";
+import type { CarType, ConditionGrade, Transmission, VehicleCondition, VehicleSpec } from "@/lib/types";
 
 const STEPS = ["Vehicle", "Condition", "Photos", "Price", "Review"] as const;
 
@@ -59,6 +59,8 @@ export function ListingWizard({
   const [manualYear, setManualYear] = useState<number | "">("");
   const [manualTransmission, setManualTransmission] = useState<Transmission>("automatic");
   const [manualColor, setManualColor] = useState("");
+  // Dealers can list used (registered), recon (imported, unregistered) or brand-new units.
+  const [carType, setCarType] = useState<CarType>("used");
 
   // Step 2 — condition
   const [mileage, setMileage] = useState("");
@@ -90,9 +92,10 @@ export function ListingWizard({
   const knownCc = MODEL_CC[`${effMake}|${effModel}`];
 
   const manualSpec: VehicleSpec | null =
-    manual && effMake && effModel && effVariant && manualYear
+    (manual || carType !== "used") && effMake && effModel && effVariant && manualYear
       ? {
-          plate: plateInput.trim().toUpperCase() || "UNREGISTERED",
+          plate:
+            carType === "used" ? plateInput.trim().toUpperCase() || "UNREGISTERED" : "—",
           make: effMake,
           model: effModel,
           variant: effVariant,
@@ -104,7 +107,7 @@ export function ListingWizard({
         }
       : null;
 
-  const effectiveSpec = manual ? manualSpec : spec;
+  const effectiveSpec = manual || carType !== "used" ? manualSpec : spec;
 
   const condition: VehicleCondition | null = mileage
     ? { mileageKm: Number(mileage), grade, owners, accidentFree, floodFree }
@@ -141,7 +144,7 @@ export function ListingWizard({
 
   const canNext = [
     Boolean(effectiveSpec),
-    Boolean(condition && condition.mileageKm > 0),
+    Boolean(condition && condition.mileageKm >= 0),
     photoIdx.length >= 1 && (mode === "seller" || !isConsignment || consignmentOwner.trim().length > 0),
     Boolean(askingPrice && Number(askingPrice) > 0),
     true,
@@ -151,6 +154,7 @@ export function ListingWizard({
     if (!effectiveSpec || !condition || !valuation) return;
     const listing = submitListing({
       spec: effectiveSpec,
+      carType,
       condition,
       description,
       photos: photoIdx.map((i) => PHOTO_POOL[i]),
@@ -247,7 +251,38 @@ export function ListingWizard({
           {step === 0 && (
             <div>
               <h2 className="text-lg font-bold text-slate-900">Identify the vehicle</h2>
-              <p className="mt-1 text-sm text-slate-500">
+
+              {mode === "dealer" && (
+                <div className="mt-3">
+                  <span className="text-xs font-semibold text-slate-600">Unit type</span>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                    {(
+                      [
+                        ["used", "Used", "Registered — plate lookup"],
+                        ["recon", "Recon", "Imported, unregistered"],
+                        ["new", "New", "Brand new, ready stock"],
+                      ] as const
+                    ).map(([v, label, hint]) => (
+                      <button
+                        key={v}
+                        onClick={() => setCarType(v)}
+                        className={`rounded-lg border px-3 py-2 text-left transition ${
+                          carType === v
+                            ? "border-blue-500 bg-blue-50 ring-1 ring-blue-500"
+                            : "border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <p className="text-sm font-semibold text-slate-900">{label}</p>
+                        <p className="text-[11px] text-slate-500">{hint}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {carType === "used" && (
+              <>
+              <p className="mt-3 text-sm text-slate-500">
                 Enter the number plate — we look it up in the EZAUTO datahouse and auto-fill the
                 registered spec.
               </p>
@@ -295,12 +330,16 @@ export function ListingWizard({
                   </button>
                 </div>
               )}
+              </>
+              )}
 
-              {lookupState === "miss" && (
+              {(lookupState === "miss" || carType !== "used") && (
                 <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
                   <p className="flex items-center gap-2 text-sm font-semibold text-amber-800">
                     <Icon name="warning" className="h-4 w-4" />
-                    No datahouse record — select your vehicle manually
+                    {carType !== "used"
+                      ? `${carType === "new" ? "New" : "Recon"} units are unregistered — pick the vehicle from the catalogue`
+                      : "No datahouse record — select your vehicle manually"}
                   </p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
@@ -698,7 +737,11 @@ export function ListingWizard({
               <h2 className="text-lg font-bold text-slate-900">Review &amp; submit</h2>
               <div className="mt-4 space-y-3 text-sm">
                 <ReviewRow label="Vehicle" value={vehicleTitle(effectiveSpec)} />
-                <ReviewRow label="Plate" value={effectiveSpec.plate} mono />
+                <ReviewRow
+                  label="Type"
+                  value={carType === "new" ? "Brand new" : carType === "recon" ? "Recon import" : "Used"}
+                />
+                {carType === "used" && <ReviewRow label="Plate" value={effectiveSpec.plate} mono />}
                 <ReviewRow
                   label="Condition"
                   value={`${Number(mileage).toLocaleString()} km · ${grade} · ${owners} owner(s)`}

@@ -1,11 +1,13 @@
 import { PLATE_DB } from "./catalog";
 import { valuate } from "./valuation";
 import type {
+  CarType,
   Conversation,
   DealerApplication,
   Listing,
   SavedSearch,
   VehicleCondition,
+  VehicleSpec,
 } from "./types";
 
 /** Demo personas — the "logged in" identity of each portal. */
@@ -39,6 +41,9 @@ function photos(...idx: number[]): string[] {
 interface SeedArgs {
   id: string;
   plate: string;
+  /** Full spec override for unregistered (new / recon) units without a plate record. */
+  spec?: Omit<VehicleSpec, "plate">;
+  carType?: CarType;
   condition: VehicleCondition;
   askingPrice: number;
   sellerType: Listing["sellerType"];
@@ -56,10 +61,11 @@ interface SeedArgs {
 }
 
 function seed(args: SeedArgs): Listing {
-  const spec = { plate: args.plate, ...PLATE_DB[args.plate] };
+  const spec = { plate: args.plate, ...(args.spec ?? PLATE_DB[args.plate]) };
   return {
     id: args.id,
     spec,
+    carType: args.carType ?? "used",
     condition: args.condition,
     description: args.description,
     photos: args.photos,
@@ -186,6 +192,39 @@ export const SEED_LISTINGS: Listing[] = [
       { reason: "Odometer concern — dashboard photo shows different mileage", at: "2026-07-09T12:00:00Z" },
       { reason: "Seller asked for a deposit outside the platform", at: "2026-07-10T16:40:00Z" },
     ],
+  }),
+  seed({
+    id: "L-1008",
+    plate: "—",
+    spec: { make: "Toyota", model: "Harrier", variant: "2.0 Luxury", year: 2021, engineCc: 1986, transmission: "automatic", fuelType: "petrol", color: "Precious Black" },
+    carType: "recon",
+    condition: { mileageKm: 38000, grade: "excellent", owners: 1, accidentFree: true, floodFree: true },
+    askingPrice: 148800,
+    sellerType: "dealer",
+    sellerName: PERSONAS.dealer.name,
+    location: "Selangor",
+    status: "active",
+    photos: photos(2, 5, 7),
+    description:
+      "Recon unit from Japan, grade 4.5 auction sheet. Unregistered — AP and duty included in price. 5-year warranty available.",
+    listedAt: "2026-07-06T04:30:00Z",
+    views: 231,
+  }),
+  seed({
+    id: "L-1009",
+    plate: "—",
+    spec: { make: "Proton", model: "Saga", variant: "1.3 Premium", year: 2026, engineCc: 1332, transmission: "automatic", fuelType: "petrol", color: "Jet Grey" },
+    carType: "new",
+    condition: { mileageKm: 0, grade: "excellent", owners: 0, accidentFree: true, floodFree: true },
+    askingPrice: 41800,
+    sellerType: "dealer",
+    sellerName: "Weststar Motors",
+    location: "Penang",
+    status: "active",
+    photos: photos(0, 4),
+    description: "Brand new 2026 unit, ready stock. On-the-road price excluding insurance. Fast loan approval.",
+    listedAt: "2026-07-09T02:00:00Z",
+    views: 129,
   }),
   // ── Pending review (admin queue) ──────────────────────────────────────────
   seed({

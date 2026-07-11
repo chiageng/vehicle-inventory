@@ -54,6 +54,17 @@ export function ListingCard({
         </Link>
         <p className="mt-1 text-lg font-bold text-slate-900">{formatCurrency(listing.askingPrice)}</p>
         <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-slate-500">
+          {listing.carType !== "used" && (
+            <span
+              className={`rounded px-1.5 py-0.5 font-semibold ${
+                listing.carType === "new"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-violet-100 text-violet-700"
+              }`}
+            >
+              {listing.carType === "new" ? "New" : "Recon"}
+            </span>
+          )}
           <span className="rounded bg-slate-100 px-1.5 py-0.5">{formatMileage(listing.condition.mileageKm)}</span>
           <span className="rounded bg-slate-100 px-1.5 py-0.5 capitalize">{listing.spec.transmission}</span>
           <span className="rounded bg-slate-100 px-1.5 py-0.5">{listing.location}</span>

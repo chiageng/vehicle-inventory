@@ -33,7 +33,7 @@ credentials (or skip sign-in entirely).
    to see it held for manual review instead.
 2. **Admin — review the flagged ones** (`/admin/queue`): only flagged submissions sit here. Two
    are seeded: one priced 40% below market, one with a duplicate plate.
-3. **Buyer — find it** (`/buyer/browse`): filter, compare 2–3 cars, open a listing, see the
+3. **Buyer — find it** (`/buyer`): search by model or plate, filter (incl. new/used/recon), compare 2–3 cars, open a listing, see the
    price-vs-market badge, send an enquiry or offer (contact masked).
 4. **Buyer — plate check** (`/buyer/plate-check`): check `VBU 3421` (live listing match) or
    `WPM 9083` (not listed → set an alert).

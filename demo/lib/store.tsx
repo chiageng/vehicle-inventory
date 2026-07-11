@@ -89,9 +89,10 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         );
       }
       if (input.photos.length <= 1) flags.push("Only 1 photo");
-      const dup = listings.find(
-        (l) => l.status === "active" && l.spec.plate === input.spec.plate
-      );
+      const registered = !["—", "UNREGISTERED"].includes(input.spec.plate);
+      const dup = registered
+        ? listings.find((l) => l.status === "active" && l.spec.plate === input.spec.plate)
+        : undefined;
       if (dup) flags.push(`Duplicate plate — matches live listing ${dup.id}`);
       if (!TAXONOMY[input.spec.make]?.[input.spec.model]?.includes(input.spec.variant)) {
         flags.push("Custom vehicle spec — outside catalogue, needs data-quality review");

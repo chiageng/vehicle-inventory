@@ -1,10 +1,11 @@
-import { BrowseClient } from "./BrowseClient";
+import { redirect } from "next/navigation";
 
-export default async function BrowsePage({
+/** /buyer and /buyer/browse were merged — keep old links working. */
+export default async function BrowseRedirect({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const { q = "" } = await searchParams;
-  return <BrowseClient initialQuery={q} />;
+  const { q } = await searchParams;
+  redirect(q ? `/buyer?q=${encodeURIComponent(q)}` : "/buyer");
 }

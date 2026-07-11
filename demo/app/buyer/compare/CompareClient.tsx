@@ -36,6 +36,11 @@ export function CompareClient({ initialIds }: { initialIds: string[] }) {
       label: "vs market",
       render: (l) => <PriceBadge price={l.askingPrice} valuation={l.valuation} />,
     },
+    {
+      label: "Type",
+      render: (l) =>
+        l.carType === "new" ? "Brand new" : l.carType === "recon" ? "Recon import" : "Used",
+    },
     { label: "EZAUTO value", render: (l) => formatCurrency(l.valuation.value) },
     { label: "Mileage", render: (l) => formatMileage(l.condition.mileageKm) },
     { label: "Year", render: (l) => String(l.spec.year) },
@@ -74,7 +79,7 @@ export function CompareClient({ initialIds }: { initialIds: string[] }) {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <Link href="/buyer/browse" className="text-sm text-blue-700 hover:underline">
+      <Link href="/buyer" className="text-sm text-blue-700 hover:underline">
         ← Back to browse
       </Link>
       <h1 className="mt-3 text-2xl font-bold text-slate-900">Compare cars</h1>
