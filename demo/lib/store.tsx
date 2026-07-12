@@ -20,6 +20,7 @@ import { TAXONOMY } from "./catalog";
 import { formatPct, priceDeviation } from "./valuation";
 import type {
   ChatMessage,
+  ClassifiedChannel,
   Conversation,
   DealerApplication,
   Listing,
@@ -44,6 +45,7 @@ interface DemoStore {
   markSold: (id: string) => void;
   withdrawListing: (id: string) => void;
   updatePrice: (id: string, price: number) => void;
+  toggleChannel: (id: string, channel: ClassifiedChannel) => void;
 
   startConversation: (listingId: string, buyerName: string, text: string, kind?: MessageKind) => string;
   sendMessage: (conversationId: string, from: "buyer" | "seller", text: string, kind?: MessageKind) => void;
@@ -111,6 +113,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
         listedAt: new Date().toISOString(),
         flags,
         reports: [],
+        channels: [],
       };
       setListings((prev) => [listing, ...prev]);
       return listing;
@@ -147,6 +150,21 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     (id: string, price: number) => patchListing(id, { askingPrice: price }),
     [patchListing]
   );
+
+  const toggleChannel = useCallback((id: string, channel: ClassifiedChannel) => {
+    setListings((prev) =>
+      prev.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              channels: l.channels.includes(channel)
+                ? l.channels.filter((c) => c !== channel)
+                : [...l.channels, channel],
+            }
+          : l
+      )
+    );
+  }, []);
 
   const reportListing = useCallback((id: string, reason: string) => {
     setListings((prev) =>
@@ -231,6 +249,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       markSold,
       withdrawListing,
       updatePrice,
+      toggleChannel,
       startConversation,
       sendMessage,
       markConversationRead,
@@ -253,6 +272,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       markSold,
       withdrawListing,
       updatePrice,
+      toggleChannel,
       startConversation,
       sendMessage,
       markConversationRead,

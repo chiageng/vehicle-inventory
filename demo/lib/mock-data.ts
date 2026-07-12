@@ -2,6 +2,7 @@ import { PLATE_DB } from "./catalog";
 import { valuate } from "./valuation";
 import type {
   CarType,
+  ClassifiedChannel,
   Conversation,
   DealerApplication,
   Listing,
@@ -57,6 +58,7 @@ interface SeedArgs {
   consignmentOwner?: string;
   flags?: string[];
   reports?: Listing["reports"];
+  channels?: ClassifiedChannel[];
   rejectReason?: string;
 }
 
@@ -80,6 +82,7 @@ function seed(args: SeedArgs): Listing {
     listedAt: args.listedAt,
     flags: args.flags ?? [],
     reports: args.reports ?? [],
+    channels: args.channels ?? [],
     rejectReason: args.rejectReason,
   };
 }
@@ -114,6 +117,7 @@ export const SEED_LISTINGS: Listing[] = [
       "Certified pre-owned. 175-point inspection done, free 1-year warranty. Loan arrangement available.",
     listedAt: "2026-06-28T08:00:00Z",
     views: 655,
+    channels: ["Carlist.my", "Mudah.my"],
   }),
   seed({
     id: "L-1003",
@@ -129,6 +133,7 @@ export const SEED_LISTINGS: Listing[] = [
       "Flagship spec with ADAS. Under Proton warranty until 2027. Trade-in welcome.",
     listedAt: "2026-07-05T02:10:00Z",
     views: 289,
+    channels: ["Carlist.my"],
   }),
   seed({
     id: "L-1004",
@@ -144,6 +149,7 @@ export const SEED_LISTINGS: Listing[] = [
       "Careful owner, weekend car. Full Honda service history, new Michelin tyres. Viewing at Mont Kiara.",
     listedAt: "2026-06-30T10:45:00Z",
     views: 178,
+    channels: ["Mudah.my"],
   }),
   seed({
     id: "L-1005",
@@ -174,6 +180,7 @@ export const SEED_LISTINGS: Listing[] = [
       "Consignment sale for owner. Full BMW service record, tip-top condition. Priced to sell this month.",
     listedAt: "2026-07-08T01:00:00Z",
     views: 143,
+    channels: ["Carlist.my", "Facebook Marketplace"],
   }),
   seed({
     id: "L-1007",

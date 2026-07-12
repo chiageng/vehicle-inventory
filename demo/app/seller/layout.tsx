@@ -13,8 +13,9 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
 
   const nav: PortalNavItem[] = [
     { href: "/seller", label: "Dashboard", icon: "home" },
-    { href: "/seller/sell", label: "Sell a car", icon: "plus" },
-    { href: "/seller/listings", label: "My listings", icon: "car" },
+    { href: "/seller/sell", label: "Add a car", icon: "plus" },
+    { href: "/seller/listings", label: "My inventory", icon: "car" },
+    { href: "/seller/classifieds", label: "Classified listings", icon: "tag" },
     { href: "/seller/messages", label: "Enquiries", icon: "chat", badge: unread || undefined },
   ];
 

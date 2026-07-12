@@ -13,15 +13,17 @@ export function PlateExamples({
   samples,
   onPick,
   missNote = "Any other plate returns no record.",
+  title = "Demo — plates in the mock datahouse (click to fill)",
 }: {
   samples: PlateSample[];
   onPick: (plate: string) => void;
   missNote?: string;
+  title?: string;
 }) {
   return (
     <div className="mt-3 rounded-lg bg-slate-50 p-3">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-        Demo — plates in the mock datahouse (click to fill)
+        {title}
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
         {samples.map((s) => (

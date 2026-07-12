@@ -25,8 +25,8 @@ credentials (or skip sign-in entirely).
 
 ## Demo script (pitch walk-through)
 
-1. **Seller — sell a car** (`/seller/sell`): enter plate `VHR 2210` → spec auto-fills from the
-   mock EZAUTO datahouse → add mileage/condition → photos (AI check verifies the declared
+1. **Seller — add a car** (`/seller/sell`): enter plate `VHR 2210` (or chassis
+   `MHFGN8GM5L0812349`) → spec auto-fills from the mock EZAUTO datahouse → add mileage/condition → photos (AI check verifies the declared
    condition — try "Excellent" with fewer than 3 photos to trip it) → valuation is revealed →
    set the price last (try one 20% above market to trigger the deviation warning) → submit.
    A clean submission **goes live instantly**; price it >15% below market (or pick only 1 photo)
@@ -56,8 +56,8 @@ app/
   page.tsx        Portal selection landing
   login/          Mock sign-in (any credentials work)
   buyer/          Marketplace: browse, compare, listing detail, plate check, saved, messages
-  seller/         Dashboard, sell wizard, my listings, enquiries
-  dealer/         Dashboard, instant appraisal, inventory (+ consignment), lead inbox
+  seller/         Dashboard, add-a-car wizard, my inventory, classifieds aggregator, enquiries
+  dealer/         Dashboard, instant appraisal, my inventory (+ consignment), classifieds aggregator, lead inbox
   admin/          Overview, review queue (flagged listings only), all listings, dealer verification
 components/       Shared UI (PortalShell, ListingWizard, ChatPanel, ValuationPanel, …)
 lib/              Types, catalog, valuation engine, mock data, in-memory store

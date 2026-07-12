@@ -15,7 +15,7 @@ export default function DealerInventoryPage() {
   return (
     <div>
       <PageHeader
-        title="Inventory"
+        title="My inventory"
         description="Own stock and consignment units — every listing tracks price vs market, views and leads."
         action={
           <div className="flex gap-2">
@@ -29,7 +29,7 @@ export default function DealerInventoryPage() {
               href="/dealer/inventory/new"
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
             >
-              + Add vehicle
+              + Add a car
             </Link>
           </div>
         }

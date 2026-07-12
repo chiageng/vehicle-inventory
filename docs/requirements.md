@@ -19,6 +19,7 @@ Read as: *As a [Role], I want [Goal], so that [So that…].*
 | create and publish a listing with details and photos | interested buyers can discover it |
 | be notified by email and SMS when a buyer enquires | I can respond promptly and not miss a sale |
 | edit, mark as sold, or withdraw my listing | my listing always reflects reality |
+| publish my listing to external classifieds (Carlist, Mudah, Facebook Marketplace) from one place | I reach buyers everywhere without re-posting manually |
 
 ## Dealer
 
@@ -30,6 +31,7 @@ Read as: *As a [Role], I want [Goal], so that [So that…].*
 | manage all my inventory and client sales in one dashboard | I stay on top of every unit and consignment without losing track |
 | list vehicles quickly via plate auto-fill, individually or in bulk | stocking the marketplace doesn't consume my day |
 | list used, recon and brand-new units under one inventory | my whole stock mix reaches buyers on one marketplace |
+| syndicate my inventory to Carlist, Mudah and Facebook Marketplace | one stock list feeds every channel, always in sync |
 | set my own asking price per vehicle and see a warning when it deviates from market valuation | I price competitively and spot mistakes before publishing |
 | act as the enquiry contact for client listings | the owner gets professional representation without handling buyer calls |
 | receive all buyer leads in one inbox across my listings | no lead is missed and my team can follow up |

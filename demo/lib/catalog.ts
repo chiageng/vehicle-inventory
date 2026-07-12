@@ -107,6 +107,23 @@ export function lookupPlate(raw: string): VehicleSpec | null {
   return hit ? { plate, ...hit } : null;
 }
 
+/** Chassis (VIN) index of the mock datahouse — maps to the registered plate. */
+export const CHASSIS_DB: Record<string, string> = {
+  "PM2B22S0004512345": "VHR 2210", // Perodua Axia
+  "MHFGN8GM5L0812349": "WPM 9083", // Proton Saga
+};
+
+/** EZAUTO vehicle lookup — by plate first, then by chassis number. */
+export function lookupVehicle(plateRaw: string, chassisRaw: string): VehicleSpec | null {
+  const byPlate = plateRaw.trim() ? lookupPlate(plateRaw) : null;
+  if (byPlate) return byPlate;
+  const chassis = chassisRaw.trim().toUpperCase().replace(/\s+/g, "");
+  const plate = CHASSIS_DB[chassis];
+  if (!plate) return null;
+  const spec = lookupPlate(plate);
+  return spec ? { ...spec, chassisNo: chassis } : null;
+}
+
 export const LOCATIONS = [
   "Kuala Lumpur",
   "Selangor",

@@ -14,7 +14,9 @@ export default function DealerLayout({ children }: { children: React.ReactNode }
   const nav: PortalNavItem[] = [
     { href: "/dealer", label: "Dashboard", icon: "home" },
     { href: "/dealer/appraise", label: "Instant appraisal", icon: "sparkles" },
-    { href: "/dealer/inventory", label: "Inventory", icon: "car" },
+    { href: "/dealer/inventory/new", label: "Add a car", icon: "plus" },
+    { href: "/dealer/inventory", label: "My inventory", icon: "car" },
+    { href: "/dealer/classifieds", label: "Classified listings", icon: "tag" },
     { href: "/dealer/leads", label: "Lead inbox", icon: "inbox", badge: unread || undefined },
   ];
 

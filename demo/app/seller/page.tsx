@@ -27,7 +27,7 @@ export default function SellerDashboardPage() {
             href="/seller/sell"
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
           >
-            + Sell a car
+            + Add a car
           </Link>
         }
       />
@@ -45,7 +45,7 @@ export default function SellerDashboardPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <SectionCard
-          title="My listings"
+          title="My inventory"
           className="lg:col-span-2"
           action={
             <Link href="/seller/listings" className="text-xs font-medium text-blue-700 hover:underline">

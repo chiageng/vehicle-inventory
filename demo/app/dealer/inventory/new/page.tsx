@@ -11,8 +11,8 @@ export default async function DealerNewListingPage({
   return (
     <div>
       <PageHeader
-        title="Add vehicle"
-        description="Same guided flow as sellers, plus consignment support. Plate lookup auto-fills the spec."
+        title="Add a car"
+        description="Same guided flow as sellers, plus consignment support. Plate / chassis lookup auto-fills the spec."
       />
       <ListingWizard mode="dealer" initialPlate={plate} doneHref="/dealer/inventory" />
     </div>

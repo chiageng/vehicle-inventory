@@ -24,8 +24,8 @@ flowchart LR
 
 ## SOP 1 — Listing creation (seller or dealer)
 
-1. Enter plate number → platform queries valuation SaaS (EZAUTO) → auto-fill make, model, variant, year, engine, transmission.
-2. On lookup miss: manual selection from the vehicle taxonomy (make → model → variant dropdowns). Every level has an **"Other (custom)"** option with free-text entry for vehicles outside the catalogue — custom entries are auto-flagged for data-quality review (SOP 6) so the taxonomy can be extended.
+1. The vehicle-details form is shown upfront. Seller enters car plate and/or chassis number → platform queries the valuation SaaS (EZAUTO) → a hit auto-fills the form (make, model, variant, year, engine, transmission, colour); every field stays editable.
+2. On lookup miss: the seller completes the same form manually — taxonomy dropdowns (make → model → variant), each with an **"Other (custom)"** free-text option for vehicles outside the catalogue. Custom entries are auto-flagged for data-quality review (SOP 6) so the taxonomy can be extended.
 3. Seller confirms/corrects spec, adds mileage, condition grade, owners, accident/flood declaration.
 4. Add photos (≥1 required) and description; AI photo-condition analysis verifies the declared grade against the photos.
 5. Only now is the valuation revealed (single MYR value) — computed on complete, photo-verified information.
@@ -161,4 +161,21 @@ flowchart TD
     S -- breach --> G[Takedown]
     S -- fine --> E
     D & F & G --> H[Decision logged]
+```
+
+## SOP 7 — Classified syndication (aggregator)
+
+1. Live (approved) listings can be published to connected external channels: Carlist.my, Mudah.my, Facebook Marketplace.
+2. Photos, price and details are pushed once; **price edits, mark-as-sold and withdrawals sync automatically** to every published channel — no manual re-posting.
+3. Listings still in review can be syndicated only after they go live; admin takedowns retract the external posts too.
+4. (Future) leads from external channels flow back into the platform inbox.
+
+```mermaid
+flowchart LR
+    A[Live listing] --> B{Publish to channel?}
+    B --> C[Carlist.my]
+    B --> D[Mudah.my]
+    B --> E[Facebook Marketplace]
+    A -- price edit / sold / withdrawn --> S[Auto-sync to all published channels]
+    S --> C & D & E
 ```

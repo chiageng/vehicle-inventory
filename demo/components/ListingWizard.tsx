@@ -7,7 +7,7 @@ import { Icon } from "@/components/icons";
 import { PlateExamples } from "@/components/PlateExamples";
 import { useToast } from "@/components/Toast";
 import { ValuationPanel } from "@/components/ValuationPanel";
-import { LOCATIONS, MODEL_CC, TAXONOMY, YEAR_OPTIONS, lookupPlate } from "@/lib/catalog";
+import { LOCATIONS, MODEL_CC, TAXONOMY, YEAR_OPTIONS, lookupPlate, lookupVehicle } from "@/lib/catalog";
 import { formatCurrency, vehicleTitle } from "@/lib/format";
 import { PERSONAS, PHOTO_POOL } from "@/lib/mock-data";
 import { useDemo } from "@/lib/store";
@@ -45,21 +45,24 @@ export function ListingWizard({
   // plate pre-filled, the lookup runs immediately.
   const initialHit = initialPlate ? lookupPlate(initialPlate) : null;
   const [plateInput, setPlateInput] = useState(initialPlate);
+  const [chassisInput, setChassisInput] = useState("");
   const [lookupState, setLookupState] = useState<"idle" | "found" | "miss">(
     initialPlate ? (initialHit ? "found" : "miss") : "idle"
   );
-  const [manual, setManual] = useState(Boolean(initialPlate && !initialHit));
-  const [spec, setSpec] = useState<VehicleSpec | null>(initialHit);
-  const [manualMake, setManualMake] = useState("");
-  const [manualModel, setManualModel] = useState("");
-  const [manualVariant, setManualVariant] = useState("");
+  // The vehicle-details form is the single source of truth; a successful
+  // lookup simply auto-fills it, and every field stays editable.
+  const [manualMake, setManualMake] = useState(initialHit?.make ?? "");
+  const [manualModel, setManualModel] = useState(initialHit?.model ?? "");
+  const [manualVariant, setManualVariant] = useState(initialHit?.variant ?? "");
   const [customMake, setCustomMake] = useState("");
   const [customModel, setCustomModel] = useState("");
   const [customVariant, setCustomVariant] = useState("");
   const [customEngineCc, setCustomEngineCc] = useState("");
-  const [manualYear, setManualYear] = useState<number | "">("");
-  const [manualTransmission, setManualTransmission] = useState<Transmission>("automatic");
-  const [manualColor, setManualColor] = useState("");
+  const [manualYear, setManualYear] = useState<number | "">(initialHit?.year ?? "");
+  const [manualTransmission, setManualTransmission] = useState<Transmission>(
+    initialHit?.transmission ?? "automatic"
+  );
+  const [manualColor, setManualColor] = useState(initialHit?.color ?? "");
   // Dealers can list used (registered), recon (imported, unregistered) or brand-new units.
   const [carType, setCarType] = useState<CarType>("used");
 
@@ -92,11 +95,12 @@ export function ListingWizard({
   const effVariant = isCustomVariant ? customVariant.trim() : manualVariant;
   const knownCc = MODEL_CC[`${effMake}|${effModel}`];
 
-  const manualSpec: VehicleSpec | null =
-    (manual || carType !== "used") && effMake && effModel && effVariant && manualYear
+  const vehicleSpec: VehicleSpec | null =
+    effMake && effModel && effVariant && manualYear
       ? {
           plate:
             carType === "used" ? plateInput.trim().toUpperCase() || "UNREGISTERED" : "—",
+          chassisNo: chassisInput.trim().toUpperCase() || undefined,
           make: effMake,
           model: effModel,
           variant: effVariant,
@@ -108,7 +112,7 @@ export function ListingWizard({
         }
       : null;
 
-  const effectiveSpec = manual || carType !== "used" ? manualSpec : spec;
+  const effectiveSpec = vehicleSpec;
 
   const condition: VehicleCondition | null = mileage
     ? { mileageKm: Number(mileage), grade, owners, accidentFree, floodFree }
@@ -130,15 +134,22 @@ export function ListingWizard({
   const photoConditionOk = grade !== "excellent" || photoIdx.length >= 3;
 
   const runLookup = () => {
-    const hit = lookupPlate(plateInput);
+    const hit = lookupVehicle(plateInput, chassisInput);
     if (hit) {
-      setSpec(hit);
+      setPlateInput(hit.plate);
+      if (hit.chassisNo) setChassisInput(hit.chassisNo);
+      setManualMake(hit.make);
+      setManualModel(hit.model);
+      setManualVariant(hit.variant);
+      setManualYear(hit.year);
+      setManualTransmission(hit.transmission);
+      setManualColor(hit.color);
+      setCustomMake("");
+      setCustomModel("");
+      setCustomVariant("");
       setLookupState("found");
-      setManual(false);
     } else {
-      setSpec(null);
       setLookupState("miss");
-      setManual(true);
     }
   };
 
@@ -215,7 +226,7 @@ export function ListingWizard({
             href={doneHref}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
           >
-            {mode === "dealer" ? "Back to inventory" : "View my listings"}
+            {mode === "dealer" ? "Back to inventory" : "View my inventory"}
           </Link>
         </div>
       </div>
@@ -284,67 +295,81 @@ export function ListingWizard({
               {carType === "used" && (
               <>
               <p className="mt-3 text-sm text-slate-500">
-                Enter the number plate — we look it up in the EZAUTO datahouse and auto-fill the
-                registered spec.
+                Enter the car plate and/or chassis number — we call EZAUTO to fetch the
+                registered vehicle. If it can&apos;t be found, you fill in the details manually.
               </p>
-              <div className="mt-4 flex gap-2">
-                <input
-                  value={plateInput}
-                  onChange={(e) => setPlateInput(e.target.value)}
-                  placeholder="e.g. VHR 2210"
-                  className="w-48 rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm uppercase tracking-wider"
-                />
-                <button
-                  onClick={runLookup}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  Look up plate
-                </button>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-xs font-semibold text-slate-600">Car plate</span>
+                  <input
+                    value={plateInput}
+                    onChange={(e) => setPlateInput(e.target.value)}
+                    placeholder="e.g. VHR 2210"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm uppercase tracking-wider"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold text-slate-600">Chassis number (VIN)</span>
+                  <input
+                    value={chassisInput}
+                    onChange={(e) => setChassisInput(e.target.value)}
+                    placeholder="e.g. MHFGN8GM5L0812349"
+                    className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm uppercase tracking-wider"
+                  />
+                </label>
               </div>
+              <button
+                onClick={runLookup}
+                disabled={!plateInput.trim() && !chassisInput.trim()}
+                className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
+              >
+                Look up vehicle
+              </button>
               <PlateExamples
                 onPick={setPlateInput}
                 samples={[
                   { plate: "VHR 2210", note: "Perodua Axia — record found" },
                   { plate: "WPM 9083", note: "Proton Saga — record found" },
                 ]}
-                missNote="Any other plate → no record, switches to manual entry."
+                missNote="Any other plate → no record, switches to the manual form."
+              />
+              <PlateExamples
+                title="Demo — chassis numbers in the mock datahouse (click to fill)"
+                onPick={setChassisInput}
+                samples={[
+                  { plate: "MHFGN8GM5L0812349", note: "Proton Saga" },
+                  { plate: "PM2B22S0004512345", note: "Perodua Axia" },
+                ]}
+                missNote="Any other chassis → no record, switches to the manual form."
               />
 
-              {lookupState === "found" && spec && (
-                <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
-                    <Icon name="check" className="h-4 w-4" />
-                    Record found — spec auto-filled from EZAUTO
+              {lookupState === "found" && (
+                <div className="mt-3 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">
+                  <Icon name="check" className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>
+                    <span className="font-semibold">Record found</span> — the form below has been
+                    auto-filled from EZAUTO. Confirm or correct any field.
                   </p>
-                  <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
-                    <SpecItem label="Make / model" value={`${spec.make} ${spec.model}`} />
-                    <SpecItem label="Variant" value={spec.variant} />
-                    <SpecItem label="Year" value={String(spec.year)} />
-                    <SpecItem label="Engine" value={`${spec.engineCc} cc`} />
-                    <SpecItem label="Transmission" value={spec.transmission} />
-                    <SpecItem label="Colour" value={spec.color} />
-                  </dl>
-                  <button
-                    onClick={() => {
-                      setManual(true);
-                      setLookupState("miss");
-                    }}
-                    className="mt-3 text-xs font-medium text-emerald-700 underline"
-                  >
-                    Not your car? Enter details manually
-                  </button>
+                </div>
+              )}
+              {lookupState === "miss" && (
+                <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+                  <Icon name="warning" className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>
+                    <span className="font-semibold">No datahouse record</span> — please fill in
+                    the vehicle details below manually.
+                  </p>
                 </div>
               )}
               </>
               )}
 
-              {(lookupState === "miss" || carType !== "used") && (
-                <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
-                  <p className="flex items-center gap-2 text-sm font-semibold text-amber-800">
-                    <Icon name="warning" className="h-4 w-4" />
+              <div className="mt-5 rounded-lg border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-slate-800">Vehicle details</p>
+                  <p className="mt-0.5 text-xs text-slate-500">
                     {carType !== "used"
-                      ? `${carType === "new" ? "New" : "Recon"} units are unregistered — pick the vehicle from the catalogue`
-                      : "No datahouse record — select your vehicle manually"}
+                      ? `${carType === "new" ? "New" : "Recon"} units are unregistered — pick the vehicle from the catalogue.`
+                      : "Auto-filled when the lookup finds a record — otherwise fill in manually. Every field stays editable."}
                   </p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <div>
@@ -480,13 +505,12 @@ export function ListingWizard({
                       />
                     )}
                   </div>
-                  <p className="mt-2 text-xs text-amber-700">
+                  <p className="mt-2 text-xs text-slate-400">
                     Pick from the list where possible — it keeps valuation and search accurate.
                     Anything entered via &quot;Other (custom)&quot; is auto-flagged for a quick
                     data-quality review before going live.
                   </p>
                 </div>
-              )}
             </div>
           )}
 
@@ -747,6 +771,9 @@ export function ListingWizard({
                   value={carType === "new" ? "Brand new" : carType === "recon" ? "Recon import" : "Used"}
                 />
                 {carType === "used" && <ReviewRow label="Plate" value={effectiveSpec.plate} mono />}
+                {effectiveSpec.chassisNo && (
+                  <ReviewRow label="Chassis no." value={effectiveSpec.chassisNo} mono />
+                )}
                 <ReviewRow
                   label="Condition"
                   value={`${Number(mileage).toLocaleString()} km · ${grade} · ${owners} owner(s)`}
@@ -825,15 +852,6 @@ export function ListingWizard({
           </ol>
         </div>
       </div>
-    </div>
-  );
-}
-
-function SpecItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-[11px] font-medium text-emerald-700/70">{label}</dt>
-      <dd className="font-medium capitalize text-emerald-900">{value}</dd>
     </div>
   );
 }

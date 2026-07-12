@@ -5,6 +5,7 @@ export type Transmission = "automatic" | "manual";
 export type FuelType = "petrol" | "diesel" | "hybrid" | "electric";
 export type SellerType = "private" | "dealer";
 export type CarType = "new" | "used" | "recon";
+export type ClassifiedChannel = "Carlist.my" | "Mudah.my" | "Facebook Marketplace";
 export type ListingStatus =
   | "pending"
   | "active"
@@ -16,6 +17,7 @@ export type ValuationStage = "instant" | "refined";
 
 export interface VehicleSpec {
   plate: string;
+  chassisNo?: string;
   make: string;
   model: string;
   variant: string;
@@ -72,12 +74,14 @@ export interface Listing {
   flags: string[];
   /** Buyer reports on a live listing — the admin's takedown signal. */
   reports: ListingReport[];
+  /** External classified channels this listing is syndicated to. */
+  channels: ClassifiedChannel[];
   rejectReason?: string;
 }
 
 export type NewListingInput = Omit<
   Listing,
-  "id" | "status" | "views" | "listedAt" | "flags" | "reports" | "rejectReason"
+  "id" | "status" | "views" | "listedAt" | "flags" | "reports" | "channels" | "rejectReason"
 >;
 
 export type MessageKind = "text" | "offer" | "viewing";
