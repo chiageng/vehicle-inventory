@@ -55,6 +55,26 @@ export interface ListingReport {
   at: string;
 }
 
+/** Voluntary financing record a dealer can attach to a stock unit. */
+export interface FinancingRecord {
+  provider: string;
+  amount: number;
+  drawdownDate: string;
+  tenureDays: number;
+}
+
+/**
+ * Dealer stock take-in record — powers stock aging and the dealer's
+ * financial / trading position. Internal to the dealer, never shown to buyers.
+ */
+export interface Acquisition {
+  takeInDate: string;
+  costOfPurchase: number;
+  source: string;
+  /** Voluntary basis — dealer opts in to record financing against the unit. */
+  financing?: FinancingRecord;
+}
+
 export interface Listing {
   id: string;
   spec: VehicleSpec;
@@ -66,6 +86,8 @@ export interface Listing {
   sellerType: SellerType;
   sellerName: string;
   consignmentOwner?: string;
+  /** Dealer-only stock take-in record (cost, datetime, optional financing). */
+  acquisition?: Acquisition;
   askingPrice: number;
   valuation: Valuation;
   status: ListingStatus;

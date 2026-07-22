@@ -34,7 +34,7 @@ export default function DealerInventoryPage() {
           </div>
         }
       />
-      <ManageListingsTable listings={mine} showConsignment />
+      <ManageListingsTable listings={mine} showConsignment showAging />
     </div>
   );
 }

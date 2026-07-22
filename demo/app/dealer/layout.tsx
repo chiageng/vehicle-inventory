@@ -16,6 +16,7 @@ export default function DealerLayout({ children }: { children: React.ReactNode }
     { href: "/dealer/appraise", label: "Instant appraisal", icon: "sparkles" },
     { href: "/dealer/inventory/new", label: "Add a car", icon: "plus" },
     { href: "/dealer/inventory", label: "My inventory", icon: "car" },
+    { href: "/dealer/aging", label: "Stock aging", icon: "chart" },
     { href: "/dealer/classifieds", label: "Classified listings", icon: "tag" },
     { href: "/dealer/leads", label: "Lead inbox", icon: "inbox", badge: unread || undefined },
   ];

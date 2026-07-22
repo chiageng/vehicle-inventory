@@ -179,3 +179,47 @@ flowchart LR
     A -- price edit / sold / withdrawn --> S[Auto-sync to all published channels]
     S --> C & D & E
 ```
+
+## SOP 8 — Stock aging & financial position (dealer)
+
+Car dealing is a credit-bearing business — dealers must sell fast and keep cash flowing. A unit
+that doesn't sell within **6 months of STMS take-in becomes eSTM** (hard to sell), so aging
+alerts are designed around that window.
+
+1. When a dealer adds a unit, the wizard captures the **stock take-in date, cost of purchase and
+   source** (AP supplier, trade-in, auction) — internal data, never shown to buyers.
+2. **Voluntary financing record**: the dealer can opt in to record financing against the unit
+   (provider, amount, drawdown date, tenure).
+3. The stock-aging report tracks every unsold own-stock unit's age: **Healthy (<90d) → Aging
+   (90–149d) → eSTM risk (150–179d) → eSTM (≥180d)**, with alerts from day 150.
+4. **What crossing into eSTM costs the dealer** — the temporary STMS status lapses, so ownership
+   must be transferred into the dealer's own name. The system reflects all three consequences:
+   - **Transfer fee charged** (JPJ transfer + admin) — added to the unit's holding cost.
+   - **+1 owner on the record** — the market prices this in, so the unit's market value is
+     automatically marked down (−8% in the mock).
+   - **Financing interest keeps accruing** (8% p.a. on the voluntary financing record in the
+     mock) — every idle day eats margin.
+5. Financial position rolls up live: capital deployed (Σ cost), **net potential profit
+   (Σ asking − cost − holding costs)**, financing exposure with interest accrued to date, units
+   at risk.
+6. At-risk units get a one-click reprice action; price changes auto-sync to every published
+   classified channel (SOP 7). Consignment units are excluded — the owner's capital, not the
+   dealer's.
+
+```mermaid
+flowchart TD
+    A[Dealer adds unit] --> B[Take-in date + cost of purchase<br>+ source recorded]
+    B --> C{Voluntary financing<br>record?}
+    C -- yes --> D[Provider, amount,<br>drawdown, tenure]
+    C -- no --> E[Stock-aging report]
+    D --> E
+    E --> F{Age of unsold unit}
+    F -- "< 90d" --> G[Healthy]
+    F -- "90–149d" --> H[Aging]
+    F -- "150–179d" --> I[eSTM risk — alert dealer]
+    F -- "≥ 180d" --> J[eSTM: transfer to own name<br>fee charged · +1 owner<br>market value marked down]
+    I & J --> K[One-click reprice<br>auto-syncs to channels SOP 7]
+    E --> M[Financing interest<br>accrues daily]
+    M --> L
+    E --> L[Financial position rollup:<br>capital deployed, net margin<br>after holding costs, exposure]
+```

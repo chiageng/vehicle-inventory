@@ -6,6 +6,13 @@ import { Icon } from "@/components/icons";
 import { PageHeader, SectionCard, StatCard, StatusBadge } from "@/components/ui";
 import { formatCurrency, timeAgo, vehicleTitle } from "@/lib/format";
 import { PERSONAS } from "@/lib/mock-data";
+import {
+  AGING_BANDS,
+  ESTM_WARNING_DAYS,
+  agingBand,
+  agingStock,
+  stockAgeDays,
+} from "@/lib/stock-aging";
 import { useDemo } from "@/lib/store";
 
 export default function DealerDashboardPage() {
@@ -17,7 +24,9 @@ export default function DealerDashboardPage() {
   const myIds = new Set(stock.map((l) => l.id));
   const leads = conversations.filter((c) => myIds.has(c.listingId));
   const unread = leads.filter((c) => c.unread).length;
-  const stockValue = stock.reduce((sum, l) => sum + l.askingPrice, 0);
+  const ownStock = agingStock(listings, PERSONAS.dealer.name);
+  const capitalDeployed = ownStock.reduce((sum, l) => sum + l.acquisition!.costOfPurchase, 0);
+  const atRisk = ownStock.filter((l) => stockAgeDays(l.acquisition!.takeInDate) >= ESTM_WARNING_DAYS);
 
   return (
     <div>
@@ -44,9 +53,14 @@ export default function DealerDashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Units in stock" value={stock.length} sub={`${consignments.length} consignment(s)`} />
-        <StatCard label="Stock value" value={formatCurrency(stockValue)} sub="total asking price" />
+        <StatCard label="Capital deployed" value={formatCurrency(capitalDeployed)} sub="cost of purchase, own stock" />
+        <StatCard
+          label="Aging risk"
+          value={atRisk.length}
+          sub={`unit(s) ≥ ${ESTM_WARNING_DAYS} days — eSTM window`}
+          accent={atRisk.length > 0}
+        />
         <StatCard label="Active leads" value={leads.length} sub={unread ? `${unread} unread` : "all handled"} accent={unread > 0} />
-        <StatCard label="Avg. days to sell" value="18" sub="last 90 days (mock)" />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -60,32 +74,77 @@ export default function DealerDashboardPage() {
           }
         >
           <ul className="divide-y divide-slate-100">
-            {stock.map((l) => (
-              <li key={l.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-                <div className="relative h-12 w-[72px] shrink-0 overflow-hidden rounded-md bg-slate-100">
-                  <Image src={l.photos[0]} alt="" fill className="object-cover" sizes="72px" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-900">
-                    {vehicleTitle(l.spec)}
-                    {l.consignmentOwner && (
-                      <span className="ml-2 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
-                        consignment
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {formatCurrency(l.askingPrice)} · {l.views} views ·{" "}
-                    {conversations.filter((c) => c.listingId === l.id).length} lead(s)
-                  </p>
-                </div>
-                <StatusBadge status={l.status} />
-              </li>
-            ))}
+            {stock.map((l) => {
+              const days = l.acquisition ? stockAgeDays(l.acquisition.takeInDate) : null;
+              const band = days !== null ? agingBand(days) : null;
+              return (
+                <li key={l.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
+                  <div className="relative h-12 w-[72px] shrink-0 overflow-hidden rounded-md bg-slate-100">
+                    <Image src={l.photos[0]} alt="" fill className="object-cover" sizes="72px" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900">
+                      {vehicleTitle(l.spec)}
+                      {l.consignmentOwner && (
+                        <span className="ml-2 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
+                          consignment
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {formatCurrency(l.askingPrice)} · {l.views} views ·{" "}
+                      {conversations.filter((c) => c.listingId === l.id).length} lead(s)
+                    </p>
+                  </div>
+                  {band !== null && days !== null && (
+                    <span
+                      className={`hidden shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset sm:inline-flex ${AGING_BANDS[band].chip}`}
+                      title={AGING_BANDS[band].hint}
+                    >
+                      {days}d in stock
+                    </span>
+                  )}
+                  <StatusBadge status={l.status} />
+                </li>
+              );
+            })}
           </ul>
         </SectionCard>
 
         <div className="space-y-5">
+          {atRisk.length > 0 && (
+            <SectionCard
+              title="Aging stock — act now"
+              action={
+                <Link href="/dealer/aging" className="text-xs font-medium text-blue-700 hover:underline">
+                  Stock aging →
+                </Link>
+              }
+            >
+              <ul className="space-y-2.5">
+                {atRisk.map((l) => {
+                  const days = stockAgeDays(l.acquisition!.takeInDate);
+                  const band = agingBand(days);
+                  return (
+                    <li key={l.id} className="flex items-center justify-between gap-2">
+                      <p className="min-w-0 truncate text-xs font-medium text-slate-700">
+                        {vehicleTitle(l.spec)}
+                      </p>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${AGING_BANDS[band].chip}`}
+                      >
+                        {AGING_BANDS[band].label} · {days}d
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="mt-3 text-[11px] text-slate-400">
+                Unsold 6 months after take-in ⇒ eSTM, hard to sell. Reprice these units early.
+              </p>
+            </SectionCard>
+          )}
+
           <SectionCard title="Latest leads">
             {leads.length === 0 ? (
               <p className="text-xs text-slate-400">No leads yet.</p>

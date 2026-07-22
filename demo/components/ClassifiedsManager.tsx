@@ -32,6 +32,15 @@ export function ClassifiedsManager({ listings }: { listings: Listing[] }) {
 
   return (
     <div>
+      <div className="mb-5 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+        <span className="mt-0.5 shrink-0 text-base">🔗</span>
+        <p>
+          <span className="font-semibold">Your inventory is the single source of truth.</span>{" "}
+          Every channel below is fed from it — publish once, and price edits, mark-as-sold and
+          withdrawals sync to all published channels automatically. No re-posting, no stale ads.
+        </p>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Live listings" value={live.length} />
         <StatCard label="Syndicated" value={syndicated.length} sub="published to ≥1 channel" />
@@ -106,6 +115,26 @@ export function ClassifiedsManager({ listings }: { listings: Listing[] }) {
         Price edits, mark-as-sold and withdrawals sync automatically to every published channel —
         no manual re-posting. Listings in review can be syndicated once live.
       </p>
+
+      <div className="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-800">
+              Marketplace feed <span className="ml-1 rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">COMING</span>
+            </p>
+            <p className="mt-0.5 max-w-lg text-xs text-slate-500">
+              The upcoming buyer marketplace pulls straight from this inventory feed — no
+              publishing step at all. The same feed can be shared with any partner platform.
+            </p>
+          </div>
+          <button
+            onClick={() => showToast("Inventory feed URL copied (mock) — live listings as JSON")}
+            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-xs text-slate-600 hover:bg-slate-100"
+          >
+            /api/feed/inventory.json ⧉
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

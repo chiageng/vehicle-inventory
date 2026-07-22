@@ -19,6 +19,14 @@ const STEPS = ["Vehicle", "Condition", "Photos", "Price", "Review"] as const;
 /** Sentinel option value for "Other (custom)…" in the taxonomy dropdowns. */
 const CUSTOM = "__custom__";
 
+/** Where dealer stock comes from — recorded at take-in for the aging report. */
+const ACQUISITION_SOURCES = [
+  "AP supplier — Perkema",
+  "Trade-in",
+  "Auction",
+  "Direct purchase",
+] as const;
+
 const GRADES: { value: ConditionGrade; label: string; hint: string }[] = [
   { value: "excellent", label: "Excellent", hint: "Like new, no flaws" },
   { value: "good", label: "Good", hint: "Well maintained, minor wear" },
@@ -83,6 +91,16 @@ export function ListingWizard({
   const [isConsignment, setIsConsignment] = useState(false);
   const [consignmentOwner, setConsignmentOwner] = useState("");
 
+  // Dealer stock take-in record — cost & datetime feed stock aging and the
+  // dealer's financial position. Internal only, never shown to buyers.
+  const [takeInDate, setTakeInDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [acqCost, setAcqCost] = useState("");
+  const [acqSource, setAcqSource] = useState<string>(ACQUISITION_SOURCES[0]);
+  const [recordFinancing, setRecordFinancing] = useState(false);
+  const [finProvider, setFinProvider] = useState("");
+  const [finAmount, setFinAmount] = useState("");
+  const [finTenure, setFinTenure] = useState("180");
+
   const [submitted, setSubmitted] = useState<{ id: string; live: boolean; flags: string[] } | null>(null);
 
   // "Other (custom)…" cascades: a custom make means model & variant are free
@@ -133,6 +151,12 @@ export function ListingWizard({
   // Mock AI photo-condition check: a high grade claim needs photo evidence.
   const photoConditionOk = grade !== "excellent" || photoIdx.length >= 3;
 
+  // Consignment units are the client's capital, not the dealer's — no take-in
+  // cost is recorded and they sit outside the stock-aging report.
+  const needsAcquisition = mode === "dealer" && !isConsignment;
+  const grossMargin =
+    needsAcquisition && acqCost && askingPrice ? Number(askingPrice) - Number(acqCost) : null;
+
   const runLookup = () => {
     const hit = lookupVehicle(plateInput, chassisInput);
     if (hit) {
@@ -158,7 +182,8 @@ export function ListingWizard({
     Boolean(effectiveSpec),
     Boolean(condition && condition.mileageKm >= 0),
     photoIdx.length >= 1 && (mode === "seller" || !isConsignment || consignmentOwner.trim().length > 0),
-    Boolean(askingPrice && Number(askingPrice) > 0),
+    Boolean(askingPrice && Number(askingPrice) > 0) &&
+      (!needsAcquisition || (Number(acqCost) > 0 && Boolean(takeInDate))),
     true,
   ][step];
 
@@ -174,6 +199,22 @@ export function ListingWizard({
       sellerType: mode === "dealer" ? "dealer" : "private",
       sellerName: mode === "dealer" ? PERSONAS.dealer.name : PERSONAS.seller.name,
       consignmentOwner: mode === "dealer" && isConsignment ? consignmentOwner : undefined,
+      acquisition: needsAcquisition
+        ? {
+            takeInDate: new Date(`${takeInDate}T00:00:00Z`).toISOString(),
+            costOfPurchase: Number(acqCost),
+            source: acqSource,
+            financing:
+              recordFinancing && finProvider.trim() && Number(finAmount) > 0
+                ? {
+                    provider: finProvider.trim(),
+                    amount: Number(finAmount),
+                    drawdownDate: new Date(`${takeInDate}T00:00:00Z`).toISOString(),
+                    tenureDays: Number(finTenure) || 180,
+                  }
+                : undefined,
+          }
+        : undefined,
       askingPrice: Number(askingPrice),
       valuation,
     });
@@ -655,6 +696,94 @@ export function ListingWizard({
                   </div>
                 </div>
               )}
+
+              {needsAcquisition && (
+                <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-800">Stock take-in record</p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Internal only — never shown to buyers. Cost and take-in date drive your
+                    stock-aging report and financial position.
+                  </p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <label className="block">
+                      <span className="text-xs font-semibold text-slate-600">Take-in date</span>
+                      <input
+                        type="date"
+                        value={takeInDate}
+                        onChange={(e) => setTakeInDate(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold text-slate-600">Cost of purchase (RM)</span>
+                      <input
+                        type="number"
+                        value={acqCost}
+                        onChange={(e) => setAcqCost(e.target.value)}
+                        placeholder="e.g. 86000"
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-xs font-semibold text-slate-600">Source</span>
+                      <select
+                        value={acqSource}
+                        onChange={(e) => setAcqSource(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      >
+                        {ACQUISITION_SOURCES.map((s) => (
+                          <option key={s}>{s}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  {grossMargin !== null && (
+                    <p
+                      className={`mt-3 text-sm font-semibold ${
+                        grossMargin >= 0 ? "text-emerald-700" : "text-red-600"
+                      }`}
+                    >
+                      Projected gross margin: {formatCurrency(grossMargin)} (
+                      {((grossMargin / Number(acqCost)) * 100).toFixed(1)}% on cost)
+                    </p>
+                  )}
+
+                  <label className="mt-3 flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={recordFinancing}
+                      onChange={(e) => setRecordFinancing(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 accent-blue-600"
+                    />
+                    Record financing against this unit (voluntary)
+                  </label>
+                  {recordFinancing && (
+                    <div className="mt-2 grid gap-3 sm:grid-cols-3">
+                      <input
+                        value={finProvider}
+                        onChange={(e) => setFinProvider(e.target.value)}
+                        placeholder="Provider, e.g. MBSB floor stocking"
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      />
+                      <input
+                        type="number"
+                        value={finAmount}
+                        onChange={(e) => setFinAmount(e.target.value)}
+                        placeholder="Financed amount (RM)"
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      />
+                      <input
+                        type="number"
+                        value={finTenure}
+                        onChange={(e) => setFinTenure(e.target.value)}
+                        placeholder="Tenure (days)"
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -784,6 +913,21 @@ export function ListingWizard({
                 />
                 <ReviewRow label="Market valuation" value={formatCurrency(valuation.value)} />
                 <ReviewRow label="Asking price" value={formatCurrency(Number(askingPrice))} strong />
+                {needsAcquisition && (
+                  <>
+                    <ReviewRow label="Stock take-in" value={`${takeInDate} · ${acqSource}`} />
+                    <ReviewRow label="Cost of purchase" value={formatCurrency(Number(acqCost))} />
+                    {grossMargin !== null && (
+                      <ReviewRow label="Projected margin" value={formatCurrency(grossMargin)} />
+                    )}
+                    {recordFinancing && finProvider.trim() && Number(finAmount) > 0 && (
+                      <ReviewRow
+                        label="Financing (voluntary)"
+                        value={`${finProvider} · ${formatCurrency(Number(finAmount))} · ${finTenure || 180} days`}
+                      />
+                    )}
+                  </>
+                )}
                 <ReviewRow label="Photos" value={`${photoIdx.length} selected`} />
                 <ReviewRow label="Location" value={location} />
                 {mode === "dealer" && isConsignment && (

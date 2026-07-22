@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useToast } from "@/components/Toast";
 import { Chip, EmptyState, StatusBadge } from "@/components/ui";
 import { formatCurrency, timeAgo, vehicleTitle } from "@/lib/format";
+import { AGING_BANDS, agingBand, stockAgeDays } from "@/lib/stock-aging";
 import { useDemo } from "@/lib/store";
 import { formatPct, priceDeviation } from "@/lib/valuation";
 import type { Listing } from "@/lib/types";
@@ -13,9 +14,12 @@ import type { Listing } from "@/lib/types";
 export function ManageListingsTable({
   listings,
   showConsignment = false,
+  showAging = false,
 }: {
   listings: Listing[];
   showConsignment?: boolean;
+  /** Dealer portal: show each unit's stock age from its take-in record. */
+  showAging?: boolean;
 }) {
   const { updatePrice, markSold, withdrawListing, conversations } = useDemo();
   const { showToast } = useToast();
@@ -35,6 +39,7 @@ export function ManageListingsTable({
           <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
             <th className="px-4 py-3">Vehicle</th>
             {showConsignment && <th className="px-4 py-3">Consignment</th>}
+            {showAging && <th className="px-4 py-3">Stock age</th>}
             <th className="px-4 py-3">Price vs market</th>
             <th className="px-4 py-3">Views</th>
             <th className="px-4 py-3">Leads</th>
@@ -67,6 +72,26 @@ export function ManageListingsTable({
                       <Chip tone="blue">for {l.consignmentOwner}</Chip>
                     ) : (
                       <span className="text-slate-300">own stock</span>
+                    )}
+                  </td>
+                )}
+                {showAging && (
+                  <td className="px-4 py-3">
+                    {l.acquisition ? (
+                      (() => {
+                        const days = stockAgeDays(l.acquisition.takeInDate);
+                        const band = agingBand(days);
+                        return (
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${AGING_BANDS[band].chip}`}
+                            title={AGING_BANDS[band].hint}
+                          >
+                            {AGING_BANDS[band].label} · {days}d
+                          </span>
+                        );
+                      })()
+                    ) : (
+                      <span className="text-xs text-slate-300">—</span>
                     )}
                   </td>
                 )}

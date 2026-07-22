@@ -1,6 +1,7 @@
 import { PLATE_DB } from "./catalog";
 import { valuate } from "./valuation";
 import type {
+  Acquisition,
   CarType,
   ClassifiedChannel,
   Conversation,
@@ -56,6 +57,7 @@ interface SeedArgs {
   listedAt: string;
   views?: number;
   consignmentOwner?: string;
+  acquisition?: Acquisition;
   flags?: string[];
   reports?: Listing["reports"];
   channels?: ClassifiedChannel[];
@@ -75,6 +77,7 @@ function seed(args: SeedArgs): Listing {
     sellerType: args.sellerType,
     sellerName: args.sellerName,
     consignmentOwner: args.consignmentOwner,
+    acquisition: args.acquisition,
     askingPrice: args.askingPrice,
     valuation: valuate(spec, args.condition),
     status: args.status,
@@ -118,6 +121,11 @@ export const SEED_LISTINGS: Listing[] = [
     listedAt: "2026-06-28T08:00:00Z",
     views: 655,
     channels: ["Carlist.my", "Mudah.my"],
+    acquisition: {
+      takeInDate: "2026-06-18T02:00:00Z",
+      costOfPurchase: 58500,
+      source: "Trade-in",
+    },
   }),
   seed({
     id: "L-1003",
@@ -134,6 +142,11 @@ export const SEED_LISTINGS: Listing[] = [
     listedAt: "2026-07-05T02:10:00Z",
     views: 289,
     channels: ["Carlist.my"],
+    acquisition: {
+      takeInDate: "2026-04-12T02:00:00Z",
+      costOfPurchase: 86000,
+      source: "AP supplier — Perkema",
+    },
   }),
   seed({
     id: "L-1004",
@@ -216,6 +229,45 @@ export const SEED_LISTINGS: Listing[] = [
       "Recon unit from Japan, grade 4.5 auction sheet. Unregistered — AP and duty included in price. 5-year warranty available.",
     listedAt: "2026-07-06T04:30:00Z",
     views: 231,
+    acquisition: {
+      takeInDate: "2026-02-16T02:00:00Z",
+      costOfPurchase: 132000,
+      source: "AP supplier — Perkema",
+      financing: {
+        provider: "MBSB floor stocking",
+        amount: 110000,
+        drawdownDate: "2026-02-20T02:00:00Z",
+        tenureDays: 180,
+      },
+    },
+  }),
+  seed({
+    id: "L-1010",
+    plate: "—",
+    spec: { make: "Mazda", model: "CX-5", variant: "2.0 Mid", year: 2021, engineCc: 1998, transmission: "automatic", fuelType: "petrol", color: "Machine Grey" },
+    carType: "recon",
+    condition: { mileageKm: 42000, grade: "good", owners: 1, accidentFree: true, floodFree: true },
+    askingPrice: 105800,
+    sellerType: "dealer",
+    sellerName: PERSONAS.dealer.name,
+    location: "Selangor",
+    status: "active",
+    photos: photos(3, 6),
+    description:
+      "Recon unit from Japan, grade 4 auction sheet. Unregistered — AP and duty included. Priced to move.",
+    listedAt: "2026-01-15T03:00:00Z",
+    views: 864,
+    acquisition: {
+      takeInDate: "2026-01-08T02:00:00Z",
+      costOfPurchase: 98000,
+      source: "AP supplier — Perkema",
+      financing: {
+        provider: "Bank Islam dealer financing",
+        amount: 80000,
+        drawdownDate: "2026-01-12T02:00:00Z",
+        tenureDays: 180,
+      },
+    },
   }),
   seed({
     id: "L-1009",
@@ -276,6 +328,11 @@ export const SEED_LISTINGS: Listing[] = [
     description: "Fresh trade-in, inspection completed. Certified unit with warranty.",
     listedAt: "2026-07-10T08:40:00Z",
     views: 48,
+    acquisition: {
+      takeInDate: "2026-07-06T02:00:00Z",
+      costOfPurchase: 54000,
+      source: "Trade-in",
+    },
   }),
   // ── Sold ──────────────────────────────────────────────────────────────────
   seed({

@@ -37,9 +37,20 @@ credentials (or skip sign-in entirely).
    price-vs-market badge, send an enquiry or offer (contact masked).
 4. **Buyer — plate check** (`/buyer/plate-check`): check `VBU 3421` (live listing match) or
    `WPM 9083` (not listed → set an alert).
-5. **Dealer — appraise** (`/dealer/appraise`): plate `WPM 9083` → trade-in vs retail range →
+5. **Dealer — stock aging** (`/dealer/aging`): the dealer's trading position — capital
+   deployed, net potential profit, financing exposure, and every unit's age against the
+   **6-month STMS → eSTM window**. Crossing into eSTM is fully costed: transfer fee charged,
+   +1 owner → −8% market markdown, financing interest accruing daily, and net margin after
+   holding costs per unit. One seeded unit is already eSTM, one is at risk — hit
+   "Cut price 5%" and watch it sync. When a dealer adds a car, the wizard's price step
+   captures the take-in date, cost of purchase and a voluntary financing record that feed
+   this report.
+6. **Dealer — classifieds aggregator** (`/dealer/classifieds`): inventory as the single source
+   of truth — publish a unit to Carlist.my / Mudah.my / Facebook Marketplace with one click;
+   price edits and mark-as-sold auto-sync, and the future marketplace pulls from the same feed.
+7. **Dealer — appraise** (`/dealer/appraise`): plate `WPM 9083` → trade-in vs retail range →
    "Add to inventory" pre-fills the wizard with consignment support.
-6. **Seller/Dealer — messages** (`/seller/messages`, `/dealer/leads`): reply to offers and
+8. **Seller/Dealer — messages** (`/seller/messages`, `/dealer/leads`): reply to offers and
    viewing requests.
 
 ## Key mock points (real integrations in production)
@@ -57,7 +68,7 @@ app/
   login/          Mock sign-in (any credentials work)
   buyer/          Marketplace: browse, compare, listing detail, plate check, saved, messages
   seller/         Dashboard, add-a-car wizard, my inventory, classifieds aggregator, enquiries
-  dealer/         Dashboard, instant appraisal, my inventory (+ consignment), classifieds aggregator, lead inbox
+  dealer/         Dashboard, instant appraisal, my inventory (+ consignment), stock aging & financials, classifieds aggregator, lead inbox
   admin/          Overview, review queue (flagged listings only), all listings, dealer verification
 components/       Shared UI (PortalShell, ListingWizard, ChatPanel, ValuationPanel, …)
 lib/              Types, catalog, valuation engine, mock data, in-memory store

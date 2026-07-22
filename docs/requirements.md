@@ -29,6 +29,10 @@ Read as: *As a [Role], I want [Goal], so that [So that…].*
 | get a valuation for any vehicle by plate before I acquire or consign it | I appraise trade-ins and consignments on the spot (AutoGrab-style instant appraisal) |
 | sell a client's vehicle on the marketplace | the owner reaches buyers without listing the car themselves |
 | manage all my inventory and client sales in one dashboard | I stay on top of every unit and consignment without losing track |
+| record each unit's stock take-in date and cost of purchase when I add it | my inventory doubles as my trading position, not just a list of ads |
+| see stock aging and get flagged before a unit crosses the 6-month STMS window (eSTM) | I reprice and sell fast before the unit becomes hard to sell |
+| see my financial position at a glance — capital deployed, potential margin, financing exposure | I manage cash flow in a credit-bearing business |
+| record financing against a unit on a voluntary basis | my true exposure is tracked without forced disclosure |
 | list vehicles quickly via plate auto-fill, individually or in bulk | stocking the marketplace doesn't consume my day |
 | list used, recon and brand-new units under one inventory | my whole stock mix reaches buyers on one marketplace |
 | syndicate my inventory to Carlist, Mudah and Facebook Marketplace | one stock list feeds every channel, always in sync |
