@@ -148,16 +148,17 @@ export default function DealerStockAgingPage() {
         </div>
       ) : (
         <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full min-w-[980px] text-sm">
+          <table className="w-full min-w-[1080px] text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">
                 <th className="px-4 py-3">Vehicle</th>
                 <th className="px-4 py-3">Take-in</th>
                 <th className="px-4 py-3">Stock age</th>
                 <th className="px-4 py-3">Cost</th>
+                <th className="px-4 py-3">Financing</th>
+                <th className="px-4 py-3">Holding cost</th>
                 <th className="px-4 py-3">Asking</th>
                 <th className="px-4 py-3">Net margin</th>
-                <th className="px-4 py-3">Financing</th>
                 <th className="px-4 py-3 text-right">Action</th>
               </tr>
             </thead>
@@ -220,6 +221,34 @@ export default function DealerStockAgingPage() {
                     <td className="px-4 py-3 font-medium text-slate-700">
                       {formatCurrency(acq.costOfPurchase)}
                     </td>
+                    <td className="px-4 py-3 text-xs">
+                      {acq.financing ? (
+                        <>
+                          <Chip tone="amber">{formatCurrency(acq.financing.amount)}</Chip>
+                          <p className="mt-1 text-slate-400">
+                            {acq.financing.provider} · {acq.financing.tenureDays}d tenure
+                          </p>
+                        </>
+                      ) : (
+                        <span className="text-slate-300">not recorded</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {holding.total > 0 ? (
+                        <>
+                          <p className="font-semibold text-red-600">
+                            −{formatCurrency(holding.total)}
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            {holding.interest > 0 && `${formatCurrency(holding.interest)} interest to pay`}
+                            {holding.interest > 0 && holding.estmFee > 0 && <br />}
+                            {holding.estmFee > 0 && `${formatCurrency(holding.estmFee)} eSTM transfer fee`}
+                          </p>
+                        </>
+                      ) : (
+                        <span className="text-xs text-slate-300">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <p className="font-bold text-slate-900">{formatCurrency(l.askingPrice)}</p>
                       {band === "estm" ? (
@@ -237,31 +266,10 @@ export default function DealerStockAgingPage() {
                       <p className={`font-semibold ${netMargin >= 0 ? "text-emerald-700" : "text-red-600"}`}>
                         {formatCurrency(netMargin)}
                       </p>
-                      {holding.total > 0 ? (
-                        <p className="text-[11px] text-slate-400">
-                          after {formatCurrency(holding.total)} holding cost
-                          {holding.estmFee > 0 && ` (incl. ${formatCurrency(holding.estmFee)} eSTM transfer fee)`}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-slate-400">
-                          {((netMargin / acq.costOfPurchase) * 100).toFixed(1)}% on cost
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {acq.financing ? (
-                        <>
-                          <Chip tone="amber">{formatCurrency(acq.financing.amount)}</Chip>
-                          <p className="mt-1 text-slate-400">
-                            {acq.financing.provider} · {acq.financing.tenureDays}d tenure
-                          </p>
-                          <p className="text-slate-400">
-                            ≈ {formatCurrency(holding.interest)} interest accrued
-                          </p>
-                        </>
-                      ) : (
-                        <span className="text-slate-300">not recorded</span>
-                      )}
+                      <p className="text-[11px] text-slate-400">
+                        {holding.total > 0 ? "asking − cost − holding" : "asking − cost"} ·{" "}
+                        {((netMargin / acq.costOfPurchase) * 100).toFixed(1)}% on cost
+                      </p>
                     </td>
                     <td className="px-4 py-3 text-right">
                       {(band === "warning" || band === "estm") && l.status === "active" ? (
